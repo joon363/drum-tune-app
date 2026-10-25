@@ -1,5 +1,6 @@
 import React from 'react';
 import { DrumItem, TuningTargetHead, TuningMode } from '../types';
+import { frequencyToNote } from '../utils/audioMath';
 
 interface HeadTargetCardsProps {
   drum: DrumItem;
@@ -23,85 +24,125 @@ export const HeadTargetCards: React.FC<HeadTargetCardsProps> = ({
   const completed = drum.completedTuning || {};
 
   return (
-    <div className="w-full max-w-sm px-4 grid grid-cols-2 gap-3 my-2 select-none">
+    <div className="w-full max-w-sm px-3 grid grid-cols-2 gap-2.5 my-1 select-none flex-shrink-0">
       {/* Left Card: 윗면 (Batter Head) */}
       <div
         onClick={() => onSelectHead('top')}
-        className={`cursor-pointer rounded-xl p-2.5 flex flex-col items-center justify-between border-2 transition ${
+        className={`cursor-pointer rounded-xl p-2.5 flex flex-col justify-between border-2 transition ${
           isTopActive
             ? 'bg-slate-900 border-cyan-400'
-            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+            : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
         }`}
       >
-        <div className="w-full space-y-1.5 text-sm font-sans">
-          {/* 중앙 (Fundamental) row */}
+        <div className="w-full space-y-1">
+          {/* 윗면 중앙 (Fundamental) row */}
           <div
             onClick={(e) => {
               e.stopPropagation();
               onSelectHead('top');
               onSelectMode('fundamental');
             }}
-            className={`flex items-center justify-between px-2 py-1 rounded transition ${
-              isTopActive && tuningMode === 'fundamental'
-                ? 'bg-cyan-950 text-cyan-200 font-bold border border-cyan-500'
-                : 'hover:bg-slate-850'
+            className={`flex items-center justify-between px-2 py-1 rounded transition border ${
+              completed.topFundamental
+                ? 'bg-emerald-950/40 border-emerald-500/50'
+                : isTopActive && tuningMode === 'fundamental'
+                ? 'bg-slate-800 border-slate-600'
+                : 'border-transparent hover:bg-slate-800/50'
             }`}
           >
-            <span className="text-xs text-slate-400">중앙</span>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-sm font-bold text-white">
-                {drum.targetFundamentalHz.toFixed(0)}Hz
+              {isTopActive && tuningMode === 'fundamental' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              )}
+              <span className={`text-xs ${completed.topFundamental ? 'text-emerald-300 font-semibold' : 'text-slate-400'}`}>
+                중앙
               </span>
-              {/* Check button for 튜닝완료 */}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`font-mono text-xs sm:text-sm font-bold flex items-center gap-1 ${
+                  completed.topFundamental
+                    ? 'text-emerald-300'
+                    : 'text-white'
+                }`}
+              >
+                <span className={completed.topFundamental ? 'text-emerald-400' : 'text-cyan-300'}>
+                  {frequencyToNote(drum.targetFundamentalHz).fullName}
+                </span>
+                <span>{drum.targetFundamentalHz.toFixed(0)}Hz</span>
+              </span>
+
+              {/* Checkbox Button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCompleted('top', 'fundamental');
                 }}
-                className={`w-5 h-5 rounded flex items-center justify-center border text-[11px] font-bold transition ${
+                className={`w-5 h-5 rounded flex items-center justify-center border transition ${
                   completed.topFundamental
-                    ? 'bg-emerald-600 text-white border-emerald-500'
-                    : 'bg-slate-800 text-slate-600 border-slate-700 hover:border-slate-500 hover:text-slate-400'
+                    ? 'bg-emerald-600 border-emerald-400 text-white font-black text-xs'
+                    : 'bg-slate-800 border-slate-600 text-transparent hover:border-slate-400'
                 }`}
-                title={completed.topFundamental ? '튜닝완료 취소' : '튜닝완료 체크'}
+                title={completed.topFundamental ? '튜닝완료 취소' : '튜닝완료 표시'}
               >
                 ✓
               </button>
             </div>
           </div>
 
-          {/* 러그 (Lug) row */}
+          {/* 윗면 러그 (Lug) row */}
           <div
             onClick={(e) => {
               e.stopPropagation();
               onSelectHead('top');
               onSelectMode('lug');
             }}
-            className={`flex items-center justify-between px-2 py-1 rounded transition ${
-              isTopActive && tuningMode === 'lug'
-                ? 'bg-cyan-950 text-cyan-200 font-bold border border-cyan-500'
-                : 'hover:bg-slate-850'
+            className={`flex items-center justify-between px-2 py-1 rounded transition border ${
+              completed.topLug
+                ? 'bg-emerald-950/40 border-emerald-500/50'
+                : isTopActive && tuningMode === 'lug'
+                ? 'bg-slate-800 border-slate-600'
+                : 'border-transparent hover:bg-slate-800/50'
             }`}
           >
-            <span className="text-xs text-slate-400">러그</span>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-sm font-bold text-cyan-400">
-                {drum.targetTopLugHz.toFixed(0)}Hz
+              {isTopActive && tuningMode === 'lug' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              )}
+              <span className={`text-xs ${completed.topLug ? 'text-emerald-300 font-semibold' : 'text-slate-400'}`}>
+                러그
               </span>
-              {/* Check button for 튜닝완료 */}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`font-mono text-xs sm:text-sm font-bold flex items-center gap-1 ${
+                  completed.topLug
+                    ? 'text-emerald-300'
+                    : 'text-white'
+                }`}
+              >
+                <span className={completed.topLug ? 'text-emerald-400' : 'text-cyan-300'}>
+                  {frequencyToNote(drum.targetTopLugHz).fullName}
+                </span>
+                <span>{drum.targetTopLugHz.toFixed(0)}Hz</span>
+              </span>
+
+              {/* Checkbox Button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCompleted('top', 'lug');
                 }}
-                className={`w-5 h-5 rounded flex items-center justify-center border text-[11px] font-bold transition ${
+                className={`w-5 h-5 rounded flex items-center justify-center border transition ${
                   completed.topLug
-                    ? 'bg-emerald-600 text-white border-emerald-500'
-                    : 'bg-slate-800 text-slate-600 border-slate-700 hover:border-slate-500 hover:text-slate-400'
+                    ? 'bg-emerald-600 border-emerald-400 text-white font-black text-xs'
+                    : 'bg-slate-800 border-slate-600 text-transparent hover:border-slate-400'
                 }`}
-                title={completed.topLug ? '튜닝완료 취소' : '튜닝완료 체크'}
+                title={completed.topLug ? '튜닝완료 취소' : '튜닝완료 표시'}
               >
                 ✓
               </button>
@@ -109,97 +150,136 @@ export const HeadTargetCards: React.FC<HeadTargetCardsProps> = ({
           </div>
         </div>
 
-        {/* Head Label (윗면 글씨 축소) */}
+        {/* Head Label (글씨 크기 작게, 파트별 명칭) */}
         <div className="mt-1.5 text-center">
           <span
-            className={`text-xs font-semibold tracking-wide ${
-              isTopActive ? 'text-cyan-400 font-bold' : 'text-slate-400'
+            className={`text-[11px] font-bold tracking-wider uppercase ${
+              isTopActive ? 'text-cyan-400' : 'text-slate-400'
             }`}
           >
-            윗면
+            {drum.type === 'bass' ? '타격면' : drum.type === 'snare' ? '타격면' : '윗면'}
           </span>
-          <span className="block text-[9px] text-slate-500 uppercase tracking-wider">Batter Head</span>
         </div>
       </div>
 
       {/* Right Card: 아랫면 (Resonant Head) */}
       <div
         onClick={() => onSelectHead('bottom')}
-        className={`cursor-pointer rounded-xl p-2.5 flex flex-col items-center justify-between border-2 transition ${
+        className={`cursor-pointer rounded-xl p-2.5 flex flex-col justify-between border-2 transition ${
           isBottomActive
             ? 'bg-slate-900 border-cyan-400'
-            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-700'
+            : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
         }`}
       >
-        <div className="w-full space-y-1.5 text-sm font-sans">
-          {/* 중앙 (Fundamental) row */}
+        <div className="w-full space-y-1">
+          {/* 아랫면 중앙 (Fundamental) row */}
           <div
             onClick={(e) => {
               e.stopPropagation();
               onSelectHead('bottom');
               onSelectMode('fundamental');
             }}
-            className={`flex items-center justify-between px-2 py-1 rounded transition ${
-              isBottomActive && tuningMode === 'fundamental'
-                ? 'bg-cyan-950 text-cyan-200 font-bold border border-cyan-500'
-                : 'hover:bg-slate-850'
+            className={`flex items-center justify-between px-2 py-1 rounded transition border ${
+              completed.bottomFundamental
+                ? 'bg-emerald-950/40 border-emerald-500/50'
+                : isBottomActive && tuningMode === 'fundamental'
+                ? 'bg-slate-800 border-slate-600'
+                : 'border-transparent hover:bg-slate-800/50'
             }`}
           >
-            <span className="text-xs text-slate-400">중앙</span>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-sm font-bold text-white">
-                {drum.targetFundamentalHz.toFixed(0)}Hz
+              {isBottomActive && tuningMode === 'fundamental' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              )}
+              <span className={`text-xs ${completed.bottomFundamental ? 'text-emerald-300 font-semibold' : 'text-slate-400'}`}>
+                중앙
               </span>
-              {/* Check button for 튜닝완료 */}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`font-mono text-xs sm:text-sm font-bold flex items-center gap-1 ${
+                  completed.bottomFundamental
+                    ? 'text-emerald-300'
+                    : 'text-white'
+                }`}
+              >
+                <span className={completed.bottomFundamental ? 'text-emerald-400' : 'text-cyan-300'}>
+                  {frequencyToNote(drum.targetFundamentalHz).fullName}
+                </span>
+                <span>{drum.targetFundamentalHz.toFixed(0)}Hz</span>
+              </span>
+
+              {/* Checkbox Button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCompleted('bottom', 'fundamental');
                 }}
-                className={`w-5 h-5 rounded flex items-center justify-center border text-[11px] font-bold transition ${
+                className={`w-5 h-5 rounded flex items-center justify-center border transition ${
                   completed.bottomFundamental
-                    ? 'bg-emerald-600 text-white border-emerald-500'
-                    : 'bg-slate-800 text-slate-600 border-slate-700 hover:border-slate-500 hover:text-slate-400'
+                    ? 'bg-emerald-600 border-emerald-400 text-white font-black text-xs'
+                    : 'bg-slate-800 border-slate-600 text-transparent hover:border-slate-400'
                 }`}
-                title={completed.bottomFundamental ? '튜닝완료 취소' : '튜닝완료 체크'}
+                title={completed.bottomFundamental ? '튜닝완료 취소' : '튜닝완료 표시'}
               >
                 ✓
               </button>
             </div>
           </div>
 
-          {/* 러그 (Lug) row */}
+          {/* 아랫면 러그 (Lug) row */}
           <div
             onClick={(e) => {
               e.stopPropagation();
               onSelectHead('bottom');
               onSelectMode('lug');
             }}
-            className={`flex items-center justify-between px-2 py-1 rounded transition ${
-              isBottomActive && tuningMode === 'lug'
-                ? 'bg-cyan-950 text-cyan-200 font-bold border border-cyan-500'
-                : 'hover:bg-slate-850'
+            className={`flex items-center justify-between px-2 py-1 rounded transition border ${
+              completed.bottomLug
+                ? 'bg-emerald-950/40 border-emerald-500/50'
+                : isBottomActive && tuningMode === 'lug'
+                ? 'bg-slate-800 border-slate-600'
+                : 'border-transparent hover:bg-slate-800/50'
             }`}
           >
-            <span className="text-xs text-slate-400">러그</span>
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-sm font-bold text-cyan-400">
-                {drum.targetBottomLugHz.toFixed(0)}Hz
+              {isBottomActive && tuningMode === 'lug' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              )}
+              <span className={`text-xs ${completed.bottomLug ? 'text-emerald-300 font-semibold' : 'text-slate-400'}`}>
+                러그
               </span>
-              {/* Check button for 튜닝완료 */}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`font-mono text-xs sm:text-sm font-bold flex items-center gap-1 ${
+                  completed.bottomLug
+                    ? 'text-emerald-300'
+                    : 'text-white'
+                }`}
+              >
+                <span className={completed.bottomLug ? 'text-emerald-400' : 'text-cyan-300'}>
+                  {frequencyToNote(drum.targetBottomLugHz).fullName}
+                </span>
+                <span>{drum.targetBottomLugHz.toFixed(0)}Hz</span>
+              </span>
+
+              {/* Checkbox Button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleCompleted('bottom', 'lug');
                 }}
-                className={`w-5 h-5 rounded flex items-center justify-center border text-[11px] font-bold transition ${
+                className={`w-5 h-5 rounded flex items-center justify-center border transition ${
                   completed.bottomLug
-                    ? 'bg-emerald-600 text-white border-emerald-500'
-                    : 'bg-slate-800 text-slate-600 border-slate-700 hover:border-slate-500 hover:text-slate-400'
+                    ? 'bg-emerald-600 border-emerald-400 text-white font-black text-xs'
+                    : 'bg-slate-800 border-slate-600 text-transparent hover:border-slate-400'
                 }`}
-                title={completed.bottomLug ? '튜닝완료 취소' : '튜닝완료 체크'}
+                title={completed.bottomLug ? '튜닝완료 취소' : '튜닝완료 표시'}
               >
                 ✓
               </button>
@@ -207,16 +287,15 @@ export const HeadTargetCards: React.FC<HeadTargetCardsProps> = ({
           </div>
         </div>
 
-        {/* Head Label (아랫면 글씨 축소) */}
+        {/* Head Label (글씨 크기 작게, 파트별 명칭) */}
         <div className="mt-1.5 text-center">
           <span
-            className={`text-xs font-semibold tracking-wide ${
-              isBottomActive ? 'text-cyan-400 font-bold' : 'text-slate-400'
+            className={`text-[11px] font-bold tracking-wider uppercase ${
+              isBottomActive ? 'text-cyan-400' : 'text-slate-400'
             }`}
           >
-            아랫면
+            {drum.type === 'bass' ? '전면' : drum.type === 'snare' ? '스네어사이드' : '아랫면'}
           </span>
-          <span className="block text-[9px] text-slate-500 uppercase tracking-wider">Resonant Head</span>
         </div>
       </div>
     </div>

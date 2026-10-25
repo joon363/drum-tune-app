@@ -19,9 +19,9 @@ class AudioEngine {
   private animFrameId: number | null = null;
 
   // Audio buffers
-  private timeDomainBuffer: Float32Array = new Float32Array(4096);
-  private floatFreqBuffer: Float32Array = new Float32Array(2048);
-  private byteFreqBuffer: Uint8Array = new Uint8Array(2048);
+  private timeDomainBuffer: Float32Array = new Float32Array(8192);
+  private floatFreqBuffer: Float32Array = new Float32Array(4096);
+  private byteFreqBuffer: Uint8Array = new Uint8Array(4096);
 
   // Callbacks
   private onPitchDetected: PitchCallback | null = null;
@@ -58,8 +58,8 @@ class AudioEngine {
 
       this.sourceNode = this.audioCtx.createMediaStreamSource(this.micStream);
       this.analyser = this.audioCtx.createAnalyser();
-      this.analyser.fftSize = 4096;
-      this.analyser.smoothingTimeConstant = 0.6;
+      this.analyser.fftSize = 8192;
+      this.analyser.smoothingTimeConstant = 0.25;
 
       this.timeDomainBuffer = new Float32Array(this.analyser.fftSize);
       this.floatFreqBuffer = new Float32Array(this.analyser.frequencyBinCount);

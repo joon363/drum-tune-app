@@ -12,6 +12,7 @@ import {
   DEFAULT_DRUM_KIT,
   TUNING_PRESETS,
   calculateLugFrequencies,
+  getKitByTomCount,
 } from './constants/tuningGuide';
 import { audioEngine } from './services/audioEngine';
 import { TuningMeter } from './components/TuningMeter';
@@ -21,6 +22,7 @@ import { DrumSettingsModal } from './components/DrumSettingsModal';
 import { GlobalSettingsModal } from './components/GlobalSettingsModal';
 import { SpectrogramView } from './components/SpectrogramView';
 import { AndroidGuideModal } from './components/AndroidGuideModal';
+import { frequencyToNote } from './utils/audioMath';
 
 export const App: React.FC = () => {
   // Drum Kit State
@@ -56,7 +58,8 @@ export const App: React.FC = () => {
         ? currentDrum.targetTopLugHz
         : currentDrum.targetBottomLugHz;
 
-  const activeTargetNote = currentDrum.targetFundamentalNote;
+  // Active Target Note dynamically aligned with the exact active target frequency
+  const activeTargetNote = frequencyToNote(activeTargetHz).fullName;
 
   // Initialize and Auto-Start Microphone (Default ON)
   useEffect(() => {
@@ -192,12 +195,17 @@ export const App: React.FC = () => {
   };
 
   // Apply Tuning Guide Preset (Table 1)
+  // When user selects e.g. 6 toms, automatically switch kit to 6 toms!
   const handleApplyPreset = (presetId: string) => {
     const preset = TUNING_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
 
-    setDrums((prev) => {
-      return prev.map((drum) => {
+    // 1. Rebuild kit for this preset's exact tom count (2~6 toms)
+    const baseKit = getKitByTomCount(preset.numToms);
+
+    // 2. Map the preset's fundamental frequencies to the toms in the new kit
+    const updatedKit = baseKit.map((drum) => {
+      if (drum.type === 'rack-tom' || drum.type === 'floor-tom') {
         const match = preset.toms.find((t) => t.size === drum.sizeInches);
         if (match) {
           const { topLugHz, bottomLugHz } = calculateLugFrequencies(
@@ -211,44 +219,84 @@ export const App: React.FC = () => {
             targetFundamentalNote: match.fundamentalNote,
             targetTopLugHz: topLugHz,
             targetBottomLugHz: bottomLugHz,
+            completedTuning: {
+              topFundamental: false,
+              topLug: false,
+              bottomFundamental: false,
+              bottomLug: false,
+            },
           };
         }
-        return drum;
-      });
+      }
+      return {
+        ...drum,
+        completedTuning: {
+          topFundamental: false,
+          topLug: false,
+          bottomFundamental: false,
+          bottomLug: false,
+        },
+      };
     });
-  };
 
-  // Change Drum Kit Size (n기통)
-  const handleSetKitSize = (count: number) => {
-    setKitSize(count);
-    if (count === 3) {
-      setDrums(
-        DEFAULT_DRUM_KIT.filter(
-          (d) => d.id === 'tom-12' || d.id === 'tom-14' || d.id === 'snare-14'
-        )
-      );
-    } else if (count === 4) {
-      setDrums(
-        DEFAULT_DRUM_KIT.filter(
-          (d) =>
-            d.id === 'tom-10' ||
-            d.id === 'tom-12' ||
-            d.id === 'tom-14' ||
-            d.id === 'snare-14'
-        )
-      );
-    } else if (count === 5) {
-      setDrums(DEFAULT_DRUM_KIT.filter((d) => d.id !== 'tom-8'));
-    } else {
-      setDrums(DEFAULT_DRUM_KIT);
+    setDrums(updatedKit);
+    setKitSize(preset.numToms);
+
+    // Ensure selected drum exists in new kit
+    if (!updatedKit.some((d) => d.id === selectedDrumId)) {
+      const fallback = updatedKit.find((d) => d.id === 'tom-12') || updatedKit[0];
+      setSelectedDrumId(fallback.id);
     }
   };
 
-  return (
-    <div className="w-full min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans select-none overflow-x-hidden relative">
+  // Change Drum Kit Size (n기통)
+  const handleSetKitSize = (tomCount: number) => {
+    setKitSize(tomCount);
+    const newKit = getKitByTomCount(tomCount);
+    setDrums(newKit);
+    if (!newKit.some((d) => d.id === selectedDrumId)) {
+      const fallback = newKit.find((d) => d.id === 'tom-12') || newKit[0];
+      setSelectedDrumId(fallback.id);
+    }
+  };
 
-      {/* Main Content Area (Full height available, no footer) */}
-      <main className="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-1 pb-16">
+  // Apply Kick Drum recommendation (Guide Page 6)
+  const handleApplyKickRecommendation = (rec: {
+    size: number;
+    fundamentalNote: string;
+    fundamentalHz: number;
+    batterLugHz: number;
+    resonantLugHz: number;
+  }) => {
+    setDrums((prev) =>
+      prev.map((d) => {
+        if (d.type === 'bass') {
+          return {
+            ...d,
+            name: `${rec.size}" 킥 드럼`,
+            sizeInches: rec.size,
+            targetFundamentalHz: rec.fundamentalHz,
+            targetFundamentalNote: rec.fundamentalNote,
+            targetTopLugHz: rec.batterLugHz,
+            targetBottomLugHz: rec.resonantLugHz,
+            completedTuning: {
+              topFundamental: false,
+              topLug: false,
+              bottomFundamental: false,
+              bottomLug: false,
+            },
+          };
+        }
+        return d;
+      })
+    );
+  };
+
+  return (
+    <div className="w-full h-screen max-h-screen overflow-hidden bg-[#090d16] text-slate-100 flex flex-col font-sans select-none relative">
+
+      {/* Main Content Area (Strictly height-fit, no scroll) */}
+      <main className="flex-1 min-h-0 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-1 pb-2 overflow-hidden">
         {/* 1. Top Tuning Meter Bar & Readout (matches front.png) */}
         <TuningMeter
           detectedPitch={detectedPitch}
@@ -341,11 +389,13 @@ export const App: React.FC = () => {
         <SpectrogramView
           onBack={() => setViewMode('tuner')}
           detectedPitch={detectedPitch}
+          drum={currentDrum}
         />
       )}
 
       {/* Drum Settings Modal (Double-click on tom) */}
       <DrumSettingsModal
+        key={`${currentDrum.id}-${isDrumSettingsOpen}`}
         drum={currentDrum}
         isOpen={isDrumSettingsOpen}
         onClose={() => setIsDrumSettingsOpen(false)}
@@ -361,6 +411,7 @@ export const App: React.FC = () => {
         onUpdateGlobalResonance={handleUpdateGlobalResonance}
         onApplyPreset={handleApplyPreset}
         onSetKitSize={handleSetKitSize}
+        onApplyKickRecommendation={handleApplyKickRecommendation}
         currentNumToms={kitSize}
       />
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { DetectedPitchInfo } from '../types';
+import { frequencyToNote } from '../utils/audioMath';
 
 interface TuningMeterProps {
   detectedPitch: DetectedPitchInfo | null;
@@ -15,10 +16,12 @@ export const TuningMeter: React.FC<TuningMeterProps> = ({
   isFilterActive,
 }) => {
   const currentHz = detectedPitch?.frequency ?? 0;
-  const currentNote = detectedPitch?.note ?? '--';
+  const hasSignal = currentHz > 20;
+
+  // Always compute currentNote from currentHz to guarantee 100% frequency-note alignment
+  const currentNote = hasSignal ? frequencyToNote(currentHz).fullName : (detectedPitch?.note ?? '--');
 
   // Calculate difference in Hz
-  const hasSignal = currentHz > 20;
   const diffHz = hasSignal ? currentHz - targetHz : 0;
 
   // Requirement: ±2.5Hz ~ 3Hz is considered in-tune (정음)
@@ -127,7 +130,7 @@ export const TuningMeter: React.FC<TuningMeterProps> = ({
 
           {isFilterActive && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-cyan-800">
-              FILTER
+              필터
             </span>
           )}
         </div>
