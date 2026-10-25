@@ -32,13 +32,14 @@ export const App: React.FC = () => {
   const [tuningMode, setTuningMode] = useState<TuningMode>('fundamental'); // 윗면 중앙이 기본으로 시작
 
   // Global Tuning Settings
-  const [globalResonance, setGlobalResonance] = useState<ResonanceType>('medium');
+  const [globalResonance, setGlobalResonance] = useState<ResonanceType>('high');
   const [globalHeadBias, setGlobalHeadBias] = useState<HeadBias>('bottom-higher');
-  const [kitSize, setKitSize] = useState<number>(6);
+  const [kitSize, setKitSize] = useState<number>(5);
 
   // Audio Engine State: Microphone is ON by default
   const [isMicActive, setIsMicActive] = useState<boolean>(true);
-  const [isFilterActive, setIsFilterActive] = useState<boolean>(true);
+  const [isFilterActive, setIsFilterActive] = useState<boolean>(false);
+  const [smoothingDurationSec, setSmoothingDurationSec] = useState<number>(1.0); // default: 1.0초 (1초에 한 번 갱신)
   const [detectedPitch, setDetectedPitch] = useState<DetectedPitchInfo | null>(null);
 
   // View & Modals
@@ -50,13 +51,11 @@ export const App: React.FC = () => {
   // Current selected drum
   const currentDrum = drums.find((d) => d.id === selectedDrumId) || drums[0];
 
-  // Active Target Frequency
+  // Active Target Frequency (윗면 러그 또는 아랫면 러그)
   const activeTargetHz =
-    tuningMode === 'fundamental'
-      ? currentDrum.targetFundamentalHz
-      : targetHead === 'top'
-        ? currentDrum.targetTopLugHz
-        : currentDrum.targetBottomLugHz;
+    targetHead === 'top'
+      ? currentDrum.targetTopLugHz
+      : currentDrum.targetBottomLugHz;
 
   // Active Target Note dynamically aligned with the exact active target frequency
   const activeTargetNote = frequencyToNote(activeTargetHz).fullName;
@@ -99,6 +98,11 @@ export const App: React.FC = () => {
     audioEngine.setFilter(isFilterActive, activeTargetHz);
   }, [isFilterActive, activeTargetHz]);
 
+  // Update Sliding Window smoothing duration in AudioEngine
+  useEffect(() => {
+    audioEngine.setSmoothingDurationSec(smoothingDurationSec);
+  }, [smoothingDurationSec]);
+
   // Toggle Microphone
   const handleToggleMic = async () => {
     if (isMicActive) {
@@ -127,33 +131,26 @@ export const App: React.FC = () => {
       prev.map((d) =>
         d.id === updated.id
           ? {
-              ...updated,
-              completedTuning: {
-                topFundamental: false,
-                topLug: false,
-                bottomFundamental: false,
-                bottomLug: false,
-              },
-            }
+            ...updated,
+            completedTuning: {
+              topFundamental: false,
+              topLug: false,
+              bottomFundamental: false,
+              bottomLug: false,
+            },
+          }
           : d
       )
     );
   };
 
   // Toggle tuning completion for a specific target on current drum
-  const handleToggleCompleted = (head: TuningTargetHead, mode: TuningMode) => {
+  const handleToggleCompleted = (head: TuningTargetHead) => {
     setDrums((prev) =>
       prev.map((d) => {
         if (d.id !== selectedDrumId) return d;
         const current = d.completedTuning || {};
-        const key =
-          head === 'top'
-            ? mode === 'fundamental'
-              ? 'topFundamental'
-              : 'topLug'
-            : mode === 'fundamental'
-            ? 'bottomFundamental'
-            : 'bottomLug';
+        const key = head === 'top' ? 'topLug' : 'bottomLug';
         return {
           ...d,
           completedTuning: {
@@ -195,13 +192,17 @@ export const App: React.FC = () => {
   };
 
   // Apply Tuning Guide Preset (Table 1)
-  // When user selects e.g. 6 toms, automatically switch kit to 6 toms!
+  // When user selects e.g. 6 toms, automatically switch kit to 6 toms with high resonance!
   const handleApplyPreset = (presetId: string) => {
     const preset = TUNING_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
 
-    // 1. Rebuild kit for this preset's exact tom count (2~6 toms)
-    const baseKit = getKitByTomCount(preset.numToms);
+    // Use preset resonance (defaults to 'high')
+    const presetResonance: ResonanceType = preset.resonance || 'high';
+    setGlobalResonance(presetResonance);
+
+    // 1. Rebuild kit for this preset's exact tom count (2~6 toms) with high resonance
+    const baseKit = getKitByTomCount(preset.numToms, presetResonance, globalHeadBias);
 
     // 2. Map the preset's fundamental frequencies to the toms in the new kit
     const updatedKit = baseKit.map((drum) => {
@@ -210,11 +211,12 @@ export const App: React.FC = () => {
         if (match) {
           const { topLugHz, bottomLugHz } = calculateLugFrequencies(
             match.fundamentalHz,
-            drum.resonance || globalResonance,
+            presetResonance,
             drum.headBias || globalHeadBias
           );
           return {
             ...drum,
+            resonance: presetResonance,
             targetFundamentalHz: match.fundamentalHz,
             targetFundamentalNote: match.fundamentalNote,
             targetTopLugHz: topLugHz,
@@ -230,6 +232,7 @@ export const App: React.FC = () => {
       }
       return {
         ...drum,
+        resonance: presetResonance,
         completedTuning: {
           topFundamental: false,
           topLug: false,
@@ -252,7 +255,7 @@ export const App: React.FC = () => {
   // Change Drum Kit Size (n기통)
   const handleSetKitSize = (tomCount: number) => {
     setKitSize(tomCount);
-    const newKit = getKitByTomCount(tomCount);
+    const newKit = getKitByTomCount(tomCount, globalResonance, globalHeadBias);
     setDrums(newKit);
     if (!newKit.some((d) => d.id === selectedDrumId)) {
       const fallback = newKit.find((d) => d.id === 'tom-12') || newKit[0];
@@ -293,10 +296,74 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen max-h-screen overflow-hidden bg-[#090d16] text-slate-100 flex flex-col font-sans select-none relative">
+    <div className="w-full h-screen max-h-screen overflow-hidden bg-[#070b12] text-slate-100 flex flex-col font-sans select-none relative">
+      {/* Sleek Minimalist Top Navigation Bar */}
+      <header className="w-full max-w-lg mx-auto px-4 pt-2 pb-0.5 flex items-center justify-between flex-shrink-0 z-30">
+        {/* Brand & Active Drum Quick Indicator */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
+          </div>
+
+          <button
+            onClick={() => setIsGlobalSettingsOpen(true)}
+            className="px-2.5 py-0.5 rounded-full bg-slate-900/90 border border-slate-800 text-[11px] font-medium text-slate-300 hover:text-cyan-300 hover:border-cyan-500/50 transition flex items-center gap-1 shadow-sm"
+            title="키트 설정 및 튜닝 가이드 열기"
+          >
+            <span>{drums.length}기통</span>
+          </button>
+        </div>
+
+        {/* Clean Header Action Controls (Replaces messy bottom-left floating tower) */}
+        <div className="flex items-center gap-1 bg-slate-900/90 border border-slate-800/90 rounded-2xl p-1 shadow-md backdrop-blur-md">
+          {/* Filter Toggle */}
+          <button
+            onClick={() => setIsFilterActive(!isFilterActive)}
+            className={`px-2 py-1 rounded-xl text-xs font-semibold flex items-center gap-1 transition ${isFilterActive
+              ? 'bg-cyan-950/80 text-cyan-300 border border-cyan-500/40'
+              : 'text-slate-400 hover:text-slate-200'
+              }`}
+            title="대역 필터 (목표 주파수 외 잡음 차단)"
+          >
+            <Filter size={13} className={isFilterActive ? 'text-cyan-400' : 'text-slate-400'} />
+            <span className="text-[11px]">필터</span>
+          </button>
+
+          {/* Spectrogram View Button */}
+          <button
+            onClick={() => setViewMode('spectrogram')}
+            className="px-2 py-1 rounded-xl text-xs font-semibold flex items-center gap-1 text-slate-300 hover:text-cyan-300 hover:bg-slate-800/80 transition"
+            title="스펙트로미터 화면"
+          >
+            <Activity size={13} className="text-cyan-400" />
+            <span className="text-[11px]">스펙트로</span>
+          </button>
+
+          {/* Microphone Toggle Button */}
+          <button
+            onClick={handleToggleMic}
+            className={`p-1.5 rounded-xl transition ${isMicActive
+              ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/40'
+              : 'bg-slate-800/80 text-slate-500'
+              }`}
+            title={isMicActive ? '마이크 켜짐 (터치 시 일시정지)' : '마이크 꺼짐 (터치 시 켜기)'}
+          >
+            {isMicActive ? <Mic size={14} /> : <MicOff size={14} />}
+          </button>
+
+          {/* Settings Modal Button */}
+          <button
+            onClick={() => setIsGlobalSettingsOpen(true)}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-slate-800/80 transition"
+            title="튜닝 가이드 및 설정"
+          >
+            <Settings size={14} />
+          </button>
+        </div>
+      </header>
 
       {/* Main Content Area (Strictly height-fit, no scroll) */}
-      <main className="flex-1 min-h-0 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-1 pb-2 overflow-hidden">
+      <main className="flex-1 min-h-0 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 pb-2 overflow-hidden">
         {/* 1. Top Tuning Meter Bar & Readout (matches front.png) */}
         <TuningMeter
           detectedPitch={detectedPitch}
@@ -305,14 +372,13 @@ export const App: React.FC = () => {
           isFilterActive={isFilterActive}
         />
 
-        {/* 2. Batter vs Resonant Head Target Cards (matches front.png) */}
+        {/* 2. Top Lug vs Bottom Lug Target Cards */}
         <HeadTargetCards
           drum={currentDrum}
           targetHead={targetHead}
-          tuningMode={tuningMode}
           onSelectHead={setTargetHead}
-          onSelectMode={setTuningMode}
           onToggleCompleted={handleToggleCompleted}
+          detectedPitch={detectedPitch}
         />
 
         {/* 3. Drum Kit Diagram (matches 배치.png and front.png) */}
@@ -324,72 +390,14 @@ export const App: React.FC = () => {
         />
       </main>
 
-      {/* Floating Action Buttons Cluster on Bottom-Left (Vertical Stack) */}
-      <div className="fixed bottom-5 left-4 z-40 flex flex-col items-center gap-2">
-        {/* Spectrometer FAB (그래프 모양 스펙트로 버튼) */}
-        <button
-          onClick={() => setViewMode('spectrogram')}
-          className="w-11 h-11 rounded-xl bg-slate-900 text-cyan-300 border border-cyan-400 flex flex-col items-center justify-center transition active:scale-95 shadow-lg"
-          title="스펙트로미터 화면으로 전환"
-        >
-          <Activity size={18} className="text-cyan-300" />
-          <span className="text-[9px] text-cyan-300 font-bold">스펙트로</span>
-        </button>
-
-        {/* Filter Toggle FAB */}
-        <button
-          onClick={() => setIsFilterActive(!isFilterActive)}
-          className={`w-11 h-11 rounded-xl border flex flex-col items-center justify-center transition active:scale-95 shadow-lg ${
-            isFilterActive
-              ? 'bg-cyan-950 border-cyan-400 text-cyan-300'
-              : 'bg-slate-900 border-slate-800 text-slate-500'
-          }`}
-          title="필터 모드 (목표 대역 외 잡음 차단)"
-        >
-          <Filter size={16} />
-          <span className="text-[9px] font-bold">{isFilterActive ? '필터ON' : '필터OFF'}</span>
-        </button>
-
-        {/* Settings FAB (톱니바퀴) */}
-        <button
-          onClick={() => setIsGlobalSettingsOpen(true)}
-          className="w-11 h-11 rounded-xl bg-slate-900 text-slate-300 border border-slate-700 flex flex-col items-center justify-center transition active:scale-95 shadow-lg"
-          title="튜닝 가이드 및 글로벌 설정"
-        >
-          <Settings size={18} className="text-cyan-400" />
-          <span className="text-[9px] text-slate-400 font-semibold">설정</span>
-        </button>
-
-        {/* Mic Master Toggle FAB (Default ON) */}
-        <button
-          onClick={handleToggleMic}
-          className={`w-11 h-11 rounded-xl border flex flex-col items-center justify-center transition active:scale-95 shadow-lg ${
-            isMicActive
-              ? 'bg-emerald-950 border-emerald-400 text-emerald-300'
-              : 'bg-slate-900 border-slate-700 text-slate-400'
-          }`}
-          title={isMicActive ? '마이크 켜짐 (터치 시 일시정지)' : '마이크 꺼짐 (터치 시 켜기)'}
-        >
-          {isMicActive ? (
-            <>
-              <Mic size={17} className="text-emerald-400" />
-              <span className="text-[9px] text-emerald-400 font-bold">마이크ON</span>
-            </>
-          ) : (
-            <>
-              <MicOff size={17} />
-              <span className="text-[9px] text-slate-400 font-bold">OFF</span>
-            </>
-          )}
-        </button>
-      </div>
-
       {/* Fullscreen Spectrogram View (specto.png) */}
       {viewMode === 'spectrogram' && (
         <SpectrogramView
           onBack={() => setViewMode('tuner')}
           detectedPitch={detectedPitch}
           drum={currentDrum}
+          drums={drums}
+          onSelectDrum={handleSelectDrum}
         />
       )}
 
@@ -413,6 +421,8 @@ export const App: React.FC = () => {
         onSetKitSize={handleSetKitSize}
         onApplyKickRecommendation={handleApplyKickRecommendation}
         currentNumToms={kitSize}
+        smoothingDurationSec={smoothingDurationSec}
+        onUpdateSmoothingDurationSec={setSmoothingDurationSec}
       />
 
       {/* Android Connect & Installation Guide Modal */}

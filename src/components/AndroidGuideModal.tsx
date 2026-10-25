@@ -11,9 +11,9 @@ export const AndroidGuideModal: React.FC<AndroidGuideModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[85vh] max-h-[640px]">
         {/* Header */}
-        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <Smartphone size={20} className="text-cyan-400" />
             <h3 className="text-base font-bold text-white tracking-tight">
@@ -29,7 +29,7 @@ export const AndroidGuideModal: React.FC<AndroidGuideModalProps> = ({ isOpen, on
         </div>
 
         {/* Content */}
-        <div className="p-5 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-300">
+        <div className="p-5 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-300 flex-1 min-h-0">
           {/* Step 1 */}
           <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
             <div className="flex items-center gap-2 text-cyan-300 font-bold">

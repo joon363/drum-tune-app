@@ -1,9 +1,13 @@
 {
   "appId": "com.drumtuner.tunebot",
-  "appName": "DrumTunerBot",
+  "appName": "DrumTuner",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
     "allowMixedContent": true
+  },
+  "server": {
+    "url": "http://localhost:3000",
+    "cleartext": true
   }
 }

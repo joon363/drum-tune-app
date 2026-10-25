@@ -7,11 +7,13 @@
     "dev": "vite",
     "dev:phone": "node scripts/toggleLiveReload.js on && adb reverse tcp:3000 tcp:3000 && vite",
     "build": "tsc && vite build",
-    "build:apk": "node scripts/toggleLiveReload.js off && npm run build && cap sync android && cd android && gradlew.bat assembleDebug && cd ..",
+    "build:apk": "node scripts/toggleLiveReload.js off && npm run build && npx cap sync android && cd android && gradlew.bat assembleDebug && cd ..",
+    "install:phone": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk && adb shell am start -n com.drumtuner.tunebot/.MainActivity",
+    "build:install": "npm run build:apk && npm run install:phone",
     "preview": "vite preview",
-    "cap:sync": "cap sync android",
-    "cap:build": "npm run build && cap sync android",
-    "cap:open": "cap open android"
+    "cap:sync": "npx cap sync android",
+    "cap:build": "npm run build && npx cap sync android",
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.0",

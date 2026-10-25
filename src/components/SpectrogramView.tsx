@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Play, Pause, Sliders, Zap } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Sliders, Zap, ChevronDown } from 'lucide-react';
 import { DrumItem, DetectedPitchInfo } from '../types';
 import { frequencyToNote } from '../utils/audioMath';
 import { audioEngine } from '../services/audioEngine';
@@ -8,6 +8,8 @@ interface SpectrogramViewProps {
   onBack: () => void;
   detectedPitch: DetectedPitchInfo | null;
   drum?: DrumItem;
+  drums?: DrumItem[];
+  onSelectDrum?: (drum: DrumItem) => void;
 }
 
 // Color map palette: Deep Black -> Cyan/Teal -> Magenta/Purple -> Gold/Amber -> White
@@ -58,18 +60,24 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
   onBack,
   detectedPitch,
   drum,
+  drums,
+  onSelectDrum,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const offscreenRef = useRef<HTMLCanvasElement | null>(null);
 
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [gain, setGain] = useState<number>(1.6);
-  const [speed, setSpeed] = useState<number>(3); // Scrolling speed: 1 ~ 6 px/frame
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [gain, setGain] = useState<number>(1.1); // lowered default from 1.6 to 1.1
+  const [speed, setSpeed] = useState<number>(2); // lowered default from 3 to 2
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({ width: 400, height: 600 });
 
-  // Pitch info for top header
+  // Pitch info for top header & real-time peak line
   const currentHz = detectedPitch?.frequency || 0;
+  const currentHzRef = useRef<number>(currentHz);
+  currentHzRef.current = currentHz;
+
   const noteInfo = currentHz > 0 ? frequencyToNote(currentHz) : { fullName: '--', cents: 0 };
   const currentNote = noteInfo.fullName;
   const cents = noteInfo.cents;
@@ -85,48 +93,50 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
     return ((MAX_MIDI - midi) / (MAX_MIDI - MIN_MIDI)) * 100;
   };
 
+  const liveYPercent = getPitchYPercent(currentHz);
+
   const targetLines = drum
     ? [
-        {
-          id: 'fund',
-          label: '기본음',
-          hz: drum.targetFundamentalHz,
-          note: frequencyToNote(drum.targetFundamentalHz).fullName,
-          yPercent: getPitchYPercent(drum.targetFundamentalHz),
-          borderClass: 'border-cyan-400 border-solid',
-          shadowClass: 'shadow-[0_0_12px_rgba(6,182,212,0.9)]',
-          badgeClass: 'bg-slate-950/90 text-cyan-300 border border-cyan-400 shadow-[0_0_10px_rgba(6,182,212,0.5)]',
-          dotClass: 'bg-cyan-400 shadow-[0_0_6px_#22d3ee]',
-          canvasColor: 'rgba(6, 182, 212, 0.85)',
-          canvasDash: [],
-        },
-        {
-          id: 'top',
-          label: topLabel,
-          hz: drum.targetTopLugHz,
-          note: frequencyToNote(drum.targetTopLugHz).fullName,
-          yPercent: getPitchYPercent(drum.targetTopLugHz),
-          borderClass: 'border-amber-400 border-dashed',
-          shadowClass: 'shadow-[0_0_12px_rgba(245,158,11,0.9)]',
-          badgeClass: 'bg-slate-950/90 text-amber-300 border border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.5)]',
-          dotClass: 'bg-amber-400 shadow-[0_0_6px_#fbbf24]',
-          canvasColor: 'rgba(245, 158, 11, 0.85)',
-          canvasDash: [8, 4],
-        },
-        {
-          id: 'bottom',
-          label: bottomLabel,
-          hz: drum.targetBottomLugHz,
-          note: frequencyToNote(drum.targetBottomLugHz).fullName,
-          yPercent: getPitchYPercent(drum.targetBottomLugHz),
-          borderClass: 'border-rose-400 border-dashed',
-          shadowClass: 'shadow-[0_0_12px_rgba(244,63,94,0.9)]',
-          badgeClass: 'bg-slate-950/90 text-rose-300 border border-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.5)]',
-          dotClass: 'bg-rose-400 shadow-[0_0_6px_#fb7185]',
-          canvasColor: 'rgba(244, 63, 94, 0.85)',
-          canvasDash: [8, 4],
-        },
-      ]
+      {
+        id: 'fund',
+        label: '기본음',
+        hz: drum.targetFundamentalHz,
+        note: frequencyToNote(drum.targetFundamentalHz).fullName,
+        yPercent: getPitchYPercent(drum.targetFundamentalHz),
+        borderClass: 'border-cyan-400 border-solid',
+        shadowClass: '',
+        badgeClass: 'bg-slate-950 text-cyan-300 border border-cyan-400',
+        dotClass: 'bg-cyan-400',
+        canvasColor: 'rgba(6, 182, 212, 0.85)',
+        canvasDash: [],
+      },
+      {
+        id: 'top',
+        label: topLabel,
+        hz: drum.targetTopLugHz,
+        note: frequencyToNote(drum.targetTopLugHz).fullName,
+        yPercent: getPitchYPercent(drum.targetTopLugHz),
+        borderClass: 'border-amber-400 border-dashed',
+        shadowClass: '',
+        badgeClass: 'bg-slate-950 text-amber-300 border border-amber-400',
+        dotClass: 'bg-amber-400',
+        canvasColor: 'rgba(245, 158, 11, 0.85)',
+        canvasDash: [8, 4],
+      },
+      {
+        id: 'bottom',
+        label: bottomLabel,
+        hz: drum.targetBottomLugHz,
+        note: frequencyToNote(drum.targetBottomLugHz).fullName,
+        yPercent: getPitchYPercent(drum.targetBottomLugHz),
+        borderClass: 'border-rose-400 border-dashed',
+        shadowClass: '',
+        badgeClass: 'bg-slate-950 text-rose-300 border border-rose-400',
+        dotClass: 'bg-rose-400',
+        canvasColor: 'rgba(244, 63, 94, 0.85)',
+        canvasDash: [8, 4],
+      },
+    ]
     : [];
 
   // Measure container dimensions for high-DPI resolution
@@ -173,61 +183,74 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
     const rawFreqBuffer = new Uint8Array(4096);
     const stepWidth = Math.max(1, Math.round(speed * (dpr / 1.5)));
 
-    const render = () => {
+    let lastTime = performance.now();
+    let accumulatedTime = 0;
+    const FRAME_MS = 1000 / 60; // 16.66ms (Standard 60fps pace for smooth waterfall scroll)
+
+    const render = (time: number) => {
+      const delta = time - lastTime;
+      lastTime = time;
+      accumulatedTime += delta;
+      if (accumulatedTime > 150) accumulatedTime = 150;
+
       if (!isPaused) {
-        // 1. Shift canvas left
-        offCtx.drawImage(
-          offscreen,
-          stepWidth,
-          0,
-          pixelWidth - stepWidth,
-          pixelHeight,
-          0,
-          0,
-          pixelWidth - stepWidth,
-          pixelHeight
-        );
+        while (accumulatedTime >= FRAME_MS) {
+          accumulatedTime -= FRAME_MS;
 
-        // 2. Fetch live raw 4096-bin FFT data from audioEngine
-        const { data: freqData, sampleRate } = audioEngine.getLatestFrequencyData(rawFreqBuffer);
-        const binCount = freqData.length;
-        const binHz = (sampleRate / 2) / binCount;
+          // 1. Shift canvas left
+          offCtx.drawImage(
+            offscreen,
+            stepWidth,
+            0,
+            pixelWidth - stepWidth,
+            pixelHeight,
+            0,
+            0,
+            pixelWidth - stepWidth,
+            pixelHeight
+          );
 
-        // 3. Render continuous high-resolution frequency column
-        const colData = offCtx.createImageData(stepWidth, pixelHeight);
+          // 2. Fetch live raw 4096-bin FFT data from audioEngine
+          const { data: freqData, sampleRate } = audioEngine.getLatestFrequencyData(rawFreqBuffer);
+          const binCount = freqData.length;
+          const binHz = (sampleRate / 2) / binCount;
 
-        for (let y = 0; y < pixelHeight; y++) {
-          const frac = y / pixelHeight;
-          const midi = MAX_MIDI - frac * (MAX_MIDI - MIN_MIDI);
-          const f = 440 * Math.pow(2, (midi - 69) / 12);
+          // 3. Render continuous high-resolution frequency column
+          const colData = offCtx.createImageData(stepWidth, pixelHeight);
 
-          const binFloat = f / binHz;
-          let magnitude = 0;
+          for (let y = 0; y < pixelHeight; y++) {
+            const frac = y / pixelHeight;
+            const midi = MAX_MIDI - frac * (MAX_MIDI - MIN_MIDI);
+            const f = 440 * Math.pow(2, (midi - 69) / 12);
 
-          if (binFloat >= 0 && binFloat < binCount - 1) {
-            const b0 = Math.floor(binFloat);
-            const b1 = b0 + 1;
-            const t = binFloat - b0;
-            // Linear interpolate between adjacent FFT bins for smooth resolution
-            magnitude = freqData[b0] * (1 - t) + freqData[b1] * t;
-          } else if (binFloat >= binCount - 1 && binFloat < binCount) {
-            magnitude = freqData[binCount - 1];
+            const binFloat = f / binHz;
+            let magnitude = 0;
+
+            if (binFloat >= 0 && binFloat < binCount - 1) {
+              const b0 = Math.floor(binFloat);
+              const b1 = b0 + 1;
+              const t = binFloat - b0;
+              // Linear interpolate between adjacent FFT bins for smooth resolution
+              magnitude = freqData[b0] * (1 - t) + freqData[b1] * t;
+            } else if (binFloat >= binCount - 1 && binFloat < binCount) {
+              magnitude = freqData[binCount - 1];
+            }
+
+            // Apply gain and normalize
+            const normalized = Math.min(1.0, Math.max(0.0, (magnitude / 255) * gain));
+            const [r, g, b] = getSpectrogramColor(normalized);
+
+            for (let px = 0; px < stepWidth; px++) {
+              const idx = (y * stepWidth + px) * 4;
+              colData.data[idx] = r;
+              colData.data[idx + 1] = g;
+              colData.data[idx + 2] = b;
+              colData.data[idx + 3] = 255;
+            }
           }
 
-          // Apply gain and normalize
-          const normalized = Math.min(1.0, Math.max(0.0, (magnitude / 255) * gain));
-          const [r, g, b] = getSpectrogramColor(normalized);
-
-          for (let px = 0; px < stepWidth; px++) {
-            const idx = (y * stepWidth + px) * 4;
-            colData.data[idx] = r;
-            colData.data[idx + 1] = g;
-            colData.data[idx + 2] = b;
-            colData.data[idx + 3] = 255;
-          }
+          offCtx.putImageData(colData, pixelWidth - stepWidth, 0);
         }
-
-        offCtx.putImageData(colData, pixelWidth - stepWidth, 0);
 
         // 4. Draw to main canvas
         ctx.drawImage(offscreen, 0, 0);
@@ -263,6 +286,23 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
             ctx.restore();
           }
         }
+
+        // 7. Draw Real-time Detected Peak Line directly on canvas (실시간 피크 위치)
+        const liveHz = currentHzRef.current;
+        if (liveHz > 25) {
+          const liveMidi = 69 + 12 * Math.log2(liveHz / 440);
+          if (liveMidi >= MIN_MIDI && liveMidi <= MAX_MIDI) {
+            const liveY = ((MAX_MIDI - liveMidi) / (MAX_MIDI - MIN_MIDI)) * pixelHeight;
+            ctx.save();
+            ctx.lineWidth = 2 * dpr;
+            ctx.strokeStyle = '#34d399'; // vivid emerald-400
+            ctx.beginPath();
+            ctx.moveTo(0, liveY);
+            ctx.lineTo(pixelWidth, liveY);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
       }
 
       animId = requestAnimationFrame(render);
@@ -277,76 +317,96 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
 
   return (
     <div className="fixed inset-0 z-40 bg-black flex flex-col select-none text-white overflow-hidden">
-      {/* Top Header (Clean and minimal) */}
-      <div className="pt-2 pb-2 px-4 bg-slate-950 border-b border-slate-900 flex flex-col z-30">
-        <div className="flex items-center justify-between mb-1">
+      {/* Top Header (Clean, sleek, and uncluttered) */}
+      <div className="pt-2 pb-1.5 px-4 bg-slate-950/90 border-b border-slate-900/90 flex flex-col z-30 backdrop-blur-md">
+        <div className="flex items-center justify-between relative">
+          {/* Back button */}
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition active:scale-95 shadow-sm"
           >
-            <ArrowLeft size={16} />
-            튜너 화면으로
+            <ArrowLeft size={15} />
+            <span>튜너</span>
           </button>
 
+          {/* Tom Selector Dropdown (헤더 제목 위치) */}
+          {drum && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 hover:text-cyan-300 font-bold text-xs transition active:scale-95 shadow-sm"
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${drum.type === 'bass'
+                    ? 'bg-rose-400'
+                    : drum.type === 'snare'
+                      ? 'bg-amber-400'
+                      : 'bg-cyan-400'
+                    }`}
+                />
+                <span>{drum.name}</span>
+                <ChevronDown size={12} className={`text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && drums && drums.length > 0 && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-56 max-h-64 overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl z-50 p-1 divide-y divide-slate-800/60 backdrop-blur-md">
+                    {drums.map((d) => {
+                      const isCur = d.id === drum.id;
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => {
+                            onSelectDrum?.(d);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full px-2.5 py-1.5 text-left text-xs flex items-center justify-between rounded-lg transition ${isCur
+                            ? 'bg-cyan-500/20 text-cyan-300 font-bold'
+                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                            }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${d.type === 'bass'
+                                ? 'bg-rose-400'
+                                : d.type === 'snare'
+                                  ? 'bg-amber-400'
+                                  : 'bg-cyan-400'
+                                }`}
+                            />
+                            <span>{d.name}</span>
+                          </div>
+                          <span className="font-mono text-[10px] text-slate-400">
+                            {d.targetFundamentalNote} ({d.targetFundamentalHz.toFixed(0)}Hz)
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Pause / Play Button */}
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className={`p-1.5 rounded-lg border transition ${
-              isPaused
-                ? 'bg-amber-950 text-amber-300 border-amber-600'
-                : 'bg-slate-900 text-slate-400 border-slate-800'
-            }`}
+            className={`p-1.5 rounded-xl border transition active:scale-95 shadow-sm ${isPaused
+              ? 'bg-amber-950 text-amber-300 border-amber-500/50'
+              : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-white'
+              }`}
+            title={isPaused ? '화면 재개' : '화면 일시정지'}
           >
-            {isPaused ? <Play size={16} /> : <Pause size={16} />}
+            {isPaused ? <Play size={15} /> : <Pause size={15} />}
           </button>
         </div>
-
-        {/* Top Tuner Needle Bar */}
-        <div className="relative w-full max-w-md mx-auto h-5 flex items-center justify-center px-4">
-          <div className="w-full h-1 bg-slate-800 rounded-full relative">
-            <div className="absolute left-1/2 -top-2 w-6 h-5 bg-emerald-950 border border-emerald-500 -translate-x-1/2" />
-            <div className="absolute left-1/2 -top-2 w-[2px] h-5 bg-emerald-400 -translate-x-1/2 z-10" />
-
-            <div
-              className="absolute -top-2.5 w-1.5 h-6 bg-red-500 rounded-sm -translate-x-1/2 transition-all duration-75 z-20"
-              style={{ left: `${needlePercent}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Readout row: A=440, Note Name with Octave, Frequency */}
-        <div className="flex items-center justify-between px-2 mt-0.5">
-          <span className="text-xs font-mono text-slate-500">A=440</span>
-          <span className="text-xl font-mono font-bold text-white">
-            {currentNote}
-          </span>
-          <span className="text-xs font-mono font-bold text-slate-300">
-            {currentHz > 0 ? `${currentHz.toFixed(1)} Hz` : '-- Hz'}
-          </span>
-        </div>
-
-        {/* Selected Drum & Target Pitches Summary Header */}
-        {drum && (
-          <div className="flex flex-wrap items-center justify-between gap-1 pt-1.5 mt-1 border-t border-slate-850 text-xs">
-            <div className="flex items-center gap-1.5 font-bold text-white text-[11px]">
-              <span className="w-2 h-2 rounded-full bg-cyan-400" />
-              <span>{drum.name} 타겟:</span>
-            </div>
-            <div className="flex items-center gap-2 font-mono text-[11px]">
-              <span className="flex items-center gap-1 text-cyan-300 font-semibold">
-                <span className="w-2.5 h-[2px] bg-cyan-400 inline-block shadow-[0_0_4px_#22d3ee]" />
-                기본음 {frequencyToNote(drum.targetFundamentalHz).fullName} ({drum.targetFundamentalHz.toFixed(1)}Hz)
-              </span>
-              <span className="flex items-center gap-1 text-amber-300 font-semibold">
-                <span className="w-2.5 h-[2px] bg-amber-400 inline-block shadow-[0_0_4px_#fbbf24]" />
-                {topLabel} {frequencyToNote(drum.targetTopLugHz).fullName} ({drum.targetTopLugHz.toFixed(1)}Hz)
-              </span>
-              <span className="flex items-center gap-1 text-rose-300 font-semibold">
-                <span className="w-2.5 h-[2px] bg-rose-400 inline-block shadow-[0_0_4px_#fb7185]" />
-                {bottomLabel} {frequencyToNote(drum.targetBottomLugHz).fullName} ({drum.targetBottomLugHz.toFixed(1)}Hz)
-              </span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Main Screen-Height-Fit Spectrogram Container */}
@@ -358,9 +418,8 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
             return (
               <div
                 key={item.midi}
-                className={`absolute left-0 right-0 -translate-y-1/2 px-1 text-center font-mono text-[11px] font-bold ${
-                  item.isRoot ? 'text-cyan-400' : 'text-slate-500'
-                }`}
+                className={`absolute left-0 right-0 -translate-y-1/2 px-1 text-center font-mono text-[11px] font-bold ${item.isRoot ? 'text-cyan-400' : 'text-slate-500'
+                  }`}
                 style={{ top: `${yPercent}%` }}
               >
                 {item.name}
@@ -401,13 +460,13 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
               >
                 {/* Horizontal Guide Line */}
                 <div
-                  className={`w-full border-t-2 ${target.borderClass} ${target.shadowClass}`}
+                  className={`w-full border-t-2 ${target.borderClass}`}
                 />
 
                 {/* Left Badge with Label, Note & Hz */}
                 <div className="absolute left-2.5 -translate-y-1/2 flex items-center">
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold shadow-lg backdrop-blur-md flex items-center gap-1.5 ${target.badgeClass}`}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold backdrop-blur-md flex items-center gap-1.5 ${target.badgeClass}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${target.dotClass}`} />
                     <span>{target.label}</span>
@@ -418,42 +477,86 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
               </div>
             );
           })}
+          {/* Real-time Detected Peak Live Horizontal Line & Right Badge (실시간 피크 위치) */}
+          {liveYPercent !== null && (
+            <div
+              className="absolute left-0 right-0 -translate-y-1/2 pointer-events-none z-30 flex items-center transition-all duration-75 ease-out"
+              style={{ top: `${liveYPercent}%` }}
+            >
+              {/* Clean Emerald Laser Line without glow */}
+              <div className="w-full border-t-2 border-emerald-400" />
+
+              {/* Right Live Peak Badge without glow */}
+              <div className="absolute right-3 -translate-y-1/2 flex items-center">
+                <span className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-slate-950 text-emerald-300 border border-emerald-400 flex items-center gap-1.5 backdrop-blur-md">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="font-sans text-[10px] text-emerald-400 font-semibold">Peak</span>
+                  <span className="text-white font-extrabold">{currentHz.toFixed(1)}Hz</span>
+                  <span className="text-emerald-300 font-bold">({currentNote})</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Floating Controls on Bottom-Right (감도 & 속도 슬라이더) */}
-        <div className="fixed bottom-5 right-4 z-40 bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 backdrop-blur-md">
-          {/* 감도 (Gain) Slider */}
-          <div className="flex items-center justify-between gap-2 text-[11px] text-slate-300">
-            <span className="flex items-center gap-1 font-semibold text-slate-400">
-              <Sliders size={13} className="text-cyan-400" />
+        {/* Floating Controls on Bottom-Right (세로 슬라이더 & 투명 배경 & 무글로우) */}
+        <div className="fixed bottom-5 right-3 z-40 bg-transparent flex items-end gap-2.5 select-none pointer-events-auto">
+          {/* 감도 (Gain) Vertical Slider */}
+          <div className="flex flex-col items-center gap-1 bg-transparent">
+            <span className="text-[10px] font-mono text-cyan-300 font-bold bg-black/70 px-1.5 py-0.5 rounded border border-cyan-800/40">
+              x{gain.toFixed(1)}
+            </span>
+            <div className="py-1 flex items-center justify-center">
+              <input
+                type="range"
+                min="0.4"
+                max="2.5"
+                step="0.05"
+                value={gain}
+                onChange={(e) => setGain(parseFloat(e.target.value))}
+                className="accent-cyan-400 cursor-pointer"
+                style={{
+                  writingMode: 'vertical-lr',
+                  direction: 'rtl',
+                  WebkitAppearance: 'slider-vertical',
+                  width: '28px',
+                  height: '115px',
+                }}
+              />
+            </div>
+            <span className="text-[10px] font-semibold text-cyan-400 flex items-center gap-0.5 bg-black/70 px-1.5 py-0.5 rounded border border-cyan-800/40">
+              <Sliders size={11} />
               감도
             </span>
-            <input
-              type="range"
-              min="0.6"
-              max="3.5"
-              step="0.1"
-              value={gain}
-              onChange={(e) => setGain(parseFloat(e.target.value))}
-              className="w-20 accent-cyan-400 h-1 bg-slate-800 rounded-lg cursor-pointer"
-            />
           </div>
 
-          {/* 속도 (Speed) Slider */}
-          <div className="flex items-center justify-between gap-2 text-[11px] text-slate-300">
-            <span className="flex items-center gap-1 font-semibold text-slate-400">
-              <Zap size={13} className="text-amber-400" />
+          {/* 속도 (Speed) Vertical Slider */}
+          <div className="flex flex-col items-center gap-1 bg-transparent">
+            <span className="text-[10px] font-mono text-amber-300 font-bold bg-black/70 px-1.5 py-0.5 rounded border border-amber-800/40">
+              {speed}단계
+            </span>
+            <div className="py-1 flex items-center justify-center">
+              <input
+                type="range"
+                min="1"
+                max="6"
+                step="1"
+                value={speed}
+                onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
+                className="accent-amber-400 cursor-pointer"
+                style={{
+                  writingMode: 'vertical-lr',
+                  direction: 'rtl',
+                  WebkitAppearance: 'slider-vertical',
+                  width: '28px',
+                  height: '115px',
+                }}
+              />
+            </div>
+            <span className="text-[10px] font-semibold text-amber-400 flex items-center gap-0.5 bg-black/70 px-1.5 py-0.5 rounded border border-amber-800/40">
+              <Zap size={11} />
               속도
             </span>
-            <input
-              type="range"
-              min="1"
-              max="6"
-              step="1"
-              value={speed}
-              onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
-              className="w-20 accent-amber-400 h-1 bg-slate-800 rounded-lg cursor-pointer"
-            />
           </div>
         </div>
       </div>

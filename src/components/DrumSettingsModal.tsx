@@ -168,10 +168,10 @@ export const DrumSettingsModal: React.FC<DrumSettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 animate-fadeIn">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden flex flex-col h-[85vh] max-h-[640px]">
         {/* Header */}
-        <div className="px-5 py-3.5 bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
             <span
               className={`w-2.5 h-2.5 rounded-full ${type === 'bass'
@@ -194,7 +194,7 @@ export const DrumSettingsModal: React.FC<DrumSettingsModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-sm">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-sm flex-1 min-h-0">
           {/* Drum Type Selector */}
           <div>
             <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
@@ -436,7 +436,7 @@ export const DrumSettingsModal: React.FC<DrumSettingsModalProps> = ({
                 setFundamentalNote(frequencyToNote(val).fullName);
                 setUseManualLug(false);
               }}
-              className="w-full accent-cyan-400 h-1.5 bg-slate-700 rounded-lg cursor-pointer"
+              className="w-full accent-cyan-400 cursor-pointer py-1.5"
             />
 
             {/* Quick Note Buttons */}

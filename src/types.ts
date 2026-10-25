@@ -44,6 +44,9 @@ export interface TuningGuidePreset {
   numToms: number;
   intervalType: string;
   rootNote: string;
+  resonance?: ResonanceType;
+  tag?: string;
+  popular?: boolean;
   toms: {
     size: number;
     fundamentalNote: string;

@@ -69,20 +69,157 @@ export const SNARE_DRUM_RECOMMENDATIONS = [
   { size: 14, fundamentalNote: '3A#', fundamentalHz: 233.1, topLugHz: 356.0, bottomLugHz: 400.0, interval: '단 3도', desc: '타이트한 하이 톤' },
 ];
 
-// Presets from Table 1 of the Guide
-// 7기통 = 6탐 + 1킥 (+ 14" 스네어 기본)
-// 6기통 = 5탐 + 1킥 (+ 14" 스네어 기본)
-// 5기통 = 4탐 + 1킥 (+ 14" 스네어 기본)
-// 4기통 = 3탐 + 1킥 (+ 14" 스네어 기본)
-// 3기통 = 2탐 + 1킥 (+ 14" 스네어 기본)
+// Presets from Table 1 of the Tune-Bot Tuning Guide (Page 2)
+// Total Pieces (기통수 = 탐 개수 + 14" 스네어 1개 + 22" 킥 1개):
+// 8기통 = 6탐 (8, 10, 12, 13, 14, 16) + S + K
+// 7기통 = 5탐 (8, 10, 12, 14, 16) + S + K
+// 6기통 = 4탐 (10, 12, 14, 16) + S + K
+// 5기통 = 3탐 (10, 12, 14 또는 10, 12, 16) + S + K
+// 4기통 = 2탐 (12, 16 또는 10, 14) + S + K
 export const TUNING_PRESETS: TuningGuidePreset[] = [
+  // 1순위: Table 1 Col 3: 3 toms (총 5기통) - Major Chord (10, 12, 14) [전 세계 가장 대중적인 표준]
   {
-    id: 'toms-6-thirds',
-    name: '7기통 - 장3도',
-    koreanName: '7기통 - 장3도',
+    id: 'toms-3-chord',
+    name: '5기통 - 장조 화음 (10, 12, 14)',
+    koreanName: '5기통 - 장조 화음 (10, 12, 14)',
+    numToms: 3,
+    intervalType: 'Major Chord',
+    rootNote: '3C',
+    resonance: 'high',
+    tag: '표준',
+    popular: true,
+    toms: [
+      { size: 10, fundamentalNote: '3C', fundamentalHz: 130.8 },
+      { size: 12, fundamentalNote: '2A', fundamentalHz: 110.0 },
+      { size: 14, fundamentalNote: '2F', fundamentalHz: 87.3 },
+    ],
+  },
+  // 2순위: Table 1 Col 4: 3 toms (총 5기통) - Perfect Fourths (10, 12, 16) [록/팝 펀치감 표준]
+  {
+    id: 'toms-3-fourths',
+    name: '5기통 - 완전4도 (10, 12, 16)',
+    koreanName: '5기통 - 완전4도 (10, 12, 16)',
+    numToms: 3,
+    intervalType: 'Perfect Fourths',
+    rootNote: '3C',
+    resonance: 'high',
+    tag: '록/팝 추천',
+    popular: true,
+    toms: [
+      { size: 10, fundamentalNote: '3C', fundamentalHz: 130.8 },
+      { size: 12, fundamentalNote: '2G', fundamentalHz: 98.0 },
+      { size: 16, fundamentalNote: '2D', fundamentalHz: 73.4 },
+    ],
+  },
+  // 3순위: Table 1 Col 7: 4 toms (총 6기통) - Call to Post (10, 12, 14, 16) [모던 록/워십 대표 튜닝]
+  {
+    id: 'toms-4-post',
+    name: '6기통 - Call to Post (10, 12, 14, 16)',
+    koreanName: '6기통 - Call to Post (10, 12, 14, 16)',
+    numToms: 4,
+    intervalType: 'Call to Post',
+    rootNote: '3D',
+    resonance: 'high',
+    tag: '6기통 추천',
+    popular: true,
+    toms: [
+      { size: 10, fundamentalNote: '3D', fundamentalHz: 146.8 },
+      { size: 12, fundamentalNote: '2B', fundamentalHz: 123.5 },
+      { size: 14, fundamentalNote: '2G', fundamentalHz: 98.0 },
+      { size: 16, fundamentalNote: '2D', fundamentalHz: 73.4 },
+    ],
+  },
+  // 4순위: Table 1 Col 8: 4 toms (총 6기통) - Perfect Fourths (10, 12, 14, 16)
+  {
+    id: 'toms-4-fourths',
+    name: '6기통 - 완전4도',
+    koreanName: '6기통 - 완전4도',
+    numToms: 4,
+    intervalType: 'Perfect Fourths',
+    rootNote: '3E',
+    resonance: 'high',
+    tag: '넓은 음역',
+    toms: [
+      { size: 10, fundamentalNote: '3E', fundamentalHz: 164.8 },
+      { size: 12, fundamentalNote: '2B', fundamentalHz: 123.5 },
+      { size: 14, fundamentalNote: '2F#', fundamentalHz: 92.5 },
+      { size: 16, fundamentalNote: '2C#', fundamentalHz: 69.3 },
+    ],
+  },
+  // 5순위: Table 1 Col 2: 2 toms (총 4기통) - Perfect Fifth (12, 16 표준) [빈티지/록 4기통]
+  {
+    id: 'toms-2-fifths-12-16',
+    name: '4기통 - 완전5도 (12, 16 표준)',
+    koreanName: '4기통 - 완전5도 (12, 16 표준)',
+    numToms: 2,
+    intervalType: 'Perfect Fifth',
+    rootNote: '2A',
+    resonance: 'high',
+    tag: '빈티지 록',
+    toms: [
+      { size: 12, fundamentalNote: '2A', fundamentalHz: 110.0 },
+      { size: 16, fundamentalNote: '2D', fundamentalHz: 73.4 },
+    ],
+  },
+  // 6순위: Table 1 Col 1: 2 toms (총 4기통) - Perfect Fifth (10, 14 재즈) [재즈/클럽/소구경]
+  {
+    id: 'toms-2-fifths-10-14',
+    name: '4기통 - 완전5도 (10, 14 재즈)',
+    koreanName: '4기통 - 완전5도 (10, 14 재즈)',
+    numToms: 2,
+    intervalType: 'Perfect Fifth',
+    rootNote: '3C',
+    resonance: 'high',
+    tag: '재즈/클럽',
+    toms: [
+      { size: 10, fundamentalNote: '3C', fundamentalHz: 130.8 },
+      { size: 14, fundamentalNote: '2F', fundamentalHz: 87.3 },
+    ],
+  },
+  // 7순위: Table 1 Col 5: 3 toms (총 5기통) - Major Thirds (12, 14, 16)
+  {
+    id: 'toms-3-thirds',
+    name: '5기통 - 장3도 (12, 14, 16)',
+    koreanName: '5기통 - 장3도 (12, 14, 16)',
+    numToms: 3,
+    intervalType: 'Major Thirds',
+    rootNote: '2A',
+    resonance: 'high',
+    tag: '1랙 2플로어',
+    toms: [
+      { size: 12, fundamentalNote: '2A', fundamentalHz: 110.0 },
+      { size: 14, fundamentalNote: '2F', fundamentalHz: 87.3 },
+      { size: 16, fundamentalNote: '2C#', fundamentalHz: 69.3 },
+    ],
+  },
+  // 8순위: Table 1 Col 9: 5 toms (총 7기통) - Major Thirds (8, 10, 12, 14, 16) [5탐 확장 세트]
+  {
+    id: 'toms-5-thirds',
+    name: '7기통 - 장3도 (5탐 확장)',
+    koreanName: '7기통 - 장3도 (5탐 확장)',
+    numToms: 5,
+    intervalType: 'Major Thirds',
+    rootNote: '3E',
+    resonance: 'high',
+    tag: '확장 5탐',
+    toms: [
+      { size: 8, fundamentalNote: '3E', fundamentalHz: 164.8 },
+      { size: 10, fundamentalNote: '3C', fundamentalHz: 130.8 },
+      { size: 12, fundamentalNote: '2G#', fundamentalHz: 103.8 },
+      { size: 14, fundamentalNote: '2E', fundamentalHz: 82.4 },
+      { size: 16, fundamentalNote: '2C', fundamentalHz: 65.4 },
+    ],
+  },
+  // 9순위: Table 1 Col 10: 6 toms (총 8기통) - Major Thirds (8, 10, 12, 13, 14, 16) [대형 커스텀 킷]
+  {
+    id: 'toms-6-scale',
+    name: '8기통 - 장3도 (6탐 풀세트)',
+    koreanName: '8기통 - 장3도 (6탐 풀세트)',
     numToms: 6,
     intervalType: 'Major Thirds',
     rootNote: '3G#',
+    resonance: 'high',
+    tag: '풀세트 8기통',
     toms: [
       { size: 8, fundamentalNote: '3G#', fundamentalHz: 207.7 },
       { size: 10, fundamentalNote: '3E', fundamentalHz: 164.8 },
@@ -92,62 +229,6 @@ export const TUNING_PRESETS: TuningGuidePreset[] = [
       { size: 16, fundamentalNote: '2C', fundamentalHz: 65.4 },
     ],
   },
-  {
-    id: 'toms-5-thirds',
-    name: '6기통 - 장3도',
-    koreanName: '6기통 - 장3도',
-    numToms: 5,
-    intervalType: 'Major Thirds',
-    rootNote: '3G#',
-    toms: [
-      { size: 8, fundamentalNote: '3G#', fundamentalHz: 207.7 },
-      { size: 10, fundamentalNote: '3E', fundamentalHz: 164.8 },
-      { size: 12, fundamentalNote: '3C', fundamentalHz: 130.8 },
-      { size: 14, fundamentalNote: '2G#', fundamentalHz: 103.8 },
-      { size: 16, fundamentalNote: '2E', fundamentalHz: 82.4 },
-    ],
-  },
-  {
-    id: 'toms-4-post',
-    name: '5기통 - Call to Post',
-    koreanName: '5기통 - Call to Post',
-    numToms: 4,
-    intervalType: 'Call to Post',
-    rootNote: '3D',
-    toms: [
-      { size: 10, fundamentalNote: '3D', fundamentalHz: 146.8 },
-      { size: 12, fundamentalNote: '2B', fundamentalHz: 123.5 },
-      { size: 14, fundamentalNote: '2G', fundamentalHz: 98.0 },
-      { size: 16, fundamentalNote: '2D', fundamentalHz: 73.4 },
-    ],
-  },
-  {
-    id: 'toms-4-fourths',
-    name: '5기통 - 완전4도',
-    koreanName: '5기통 - 완전4도',
-    numToms: 4,
-    intervalType: 'Perfect Fourths',
-    rootNote: '3E',
-    toms: [
-      { size: 10, fundamentalNote: '3E', fundamentalHz: 164.8 },
-      { size: 12, fundamentalNote: '2B', fundamentalHz: 123.5 },
-      { size: 14, fundamentalNote: '2F#', fundamentalHz: 92.5 },
-      { size: 16, fundamentalNote: '2C#', fundamentalHz: 69.3 },
-    ],
-  },
-  {
-    id: 'toms-3-chord',
-    name: '4기통 - 장조',
-    koreanName: '4기통 - 장조',
-    numToms: 3,
-    intervalType: 'Major Chord',
-    rootNote: '3C',
-    toms: [
-      { size: 10, fundamentalNote: '3C', fundamentalHz: 130.8 },
-      { size: 12, fundamentalNote: '2A', fundamentalHz: 110.0 },
-      { size: 14, fundamentalNote: '2F', fundamentalHz: 87.3 },
-    ],
-  }
 ];
 
 // Standard 14" Snare drum (스네어는 14" 고정 기본)
@@ -161,7 +242,7 @@ export const STANDARD_SNARE: DrumItem = {
   targetFundamentalNote: '3F#',
   targetTopLugHz: 252.0,      // Batter lug
   targetBottomLugHz: 378.0,   // Resonant lug (1.5x)
-  resonance: 'medium',
+  resonance: 'high',
   headBias: 'bottom-higher',
   x: 20,
   y: 52,
@@ -180,7 +261,7 @@ export const STANDARD_KICK: DrumItem = {
   targetFundamentalNote: '1D#',
   targetTopLugHz: 58.0,       // Batter lug
   targetBottomLugHz: 87.0,    // Resonant lug (1.5x, Perfect Fifth)
-  resonance: 'medium',
+  resonance: 'high',
   headBias: 'bottom-higher',
   x: 50,
   y: 48,
@@ -188,373 +269,96 @@ export const STANDARD_KICK: DrumItem = {
 };
 
 // Builder for any tom count (2 ~ 6 toms)
-// 6탐 (7기통: 6탐 + 킥), 5탐 (6기통: 5탐 + 킥), 4탐 (5기통: 4탐 + 킥), 3탐 (4기통: 3탐 + 킥), 2탐 (3기통: 2탐 + 킥)
-// 항상 14" 표준 스네어와 22" 킥 드럼이 포함됩니다.
-export function getKitByTomCount(numToms: number): DrumItem[] {
+// Defaults to 'high' resonance (Top: 1.5x, Bottom: 1.85x)
+export function getKitByTomCount(
+  numToms: number,
+  resonance: ResonanceType = 'high',
+  headBias: HeadBias = 'bottom-higher'
+): DrumItem[] {
+  const calc = (fundHz: number) => calculateLugFrequencies(fundHz, resonance, headBias);
+
+  const snare: DrumItem = { ...STANDARD_SNARE, resonance, headBias };
+  const kick: DrumItem = { ...STANDARD_KICK, resonance, headBias };
+
   if (numToms === 6) {
-    // 6탐 (7기통: 6탐 + 1킥): 8", 10", 12", 13", 14", 16"
+    // 8기통 (6탐 + 킥 + 스네어): 8", 10", 12", 13", 14", 16"
+    const t8 = calc(207.7);
+    const t10 = calc(164.8);
+    const t12 = calc(130.8);
+    const t13 = calc(103.8);
+    const t14 = calc(82.4);
+    const t16 = calc(65.4);
     return [
-      {
-        id: 'tom-8',
-        name: '8" 랙 탐',
-        label: '8',
-        type: 'rack-tom',
-        sizeInches: 8,
-        targetFundamentalHz: 207.7,
-        targetFundamentalNote: '3G#',
-        targetTopLugHz: 290.8,
-        targetBottomLugHz: 415.4,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 18,
-        y: 18,
-        radius: 28,
-      },
-      {
-        id: 'tom-10',
-        name: '10" 랙 탐',
-        label: '10',
-        type: 'rack-tom',
-        sizeInches: 10,
-        targetFundamentalHz: 164.8,
-        targetFundamentalNote: '3E',
-        targetTopLugHz: 230.7,
-        targetBottomLugHz: 329.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 38,
-        y: 16,
-        radius: 32,
-      },
-      {
-        id: 'tom-12',
-        name: '12" 랙 탐',
-        label: '12',
-        type: 'rack-tom',
-        sizeInches: 12,
-        targetFundamentalHz: 130.8,
-        targetFundamentalNote: '3C',
-        targetTopLugHz: 183.1,
-        targetBottomLugHz: 261.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 62,
-        y: 16,
-        radius: 36,
-      },
-      {
-        id: 'tom-13',
-        name: '13" 랙 탐',
-        label: '13',
-        type: 'rack-tom',
-        sizeInches: 13,
-        targetFundamentalHz: 103.8,
-        targetFundamentalNote: '2G#',
-        targetTopLugHz: 145.3,
-        targetBottomLugHz: 207.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 82,
-        y: 18,
-        radius: 38,
-      },
-      STANDARD_SNARE,
-      STANDARD_KICK,
-      {
-        id: 'tom-14',
-        name: '14" 플로어 탐',
-        label: '14',
-        type: 'floor-tom',
-        sizeInches: 14,
-        targetFundamentalHz: 82.4,
-        targetFundamentalNote: '2E',
-        targetTopLugHz: 115.4,
-        targetBottomLugHz: 164.8,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 84,
-        y: 50,
-        radius: 42,
-      },
-      {
-        id: 'tom-16',
-        name: '16" 플로어 탐',
-        label: '16',
-        type: 'floor-tom',
-        sizeInches: 16,
-        targetFundamentalHz: 65.4,
-        targetFundamentalNote: '2C',
-        targetTopLugHz: 91.6,
-        targetBottomLugHz: 130.8,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 76,
-        y: 82,
-        radius: 46,
-      },
+      { id: 'tom-8', name: '8" 랙 탐', label: '8', type: 'rack-tom', sizeInches: 8, targetFundamentalHz: 207.7, targetFundamentalNote: '3G#', targetTopLugHz: t8.topLugHz, targetBottomLugHz: t8.bottomLugHz, resonance, headBias, x: 18, y: 18, radius: 28 },
+      { id: 'tom-10', name: '10" 랙 탐', label: '10', type: 'rack-tom', sizeInches: 10, targetFundamentalHz: 164.8, targetFundamentalNote: '3E', targetTopLugHz: t10.topLugHz, targetBottomLugHz: t10.bottomLugHz, resonance, headBias, x: 38, y: 16, radius: 32 },
+      { id: 'tom-12', name: '12" 랙 탐', label: '12', type: 'rack-tom', sizeInches: 12, targetFundamentalHz: 130.8, targetFundamentalNote: '3C', targetTopLugHz: t12.topLugHz, targetBottomLugHz: t12.bottomLugHz, resonance, headBias, x: 62, y: 16, radius: 36 },
+      { id: 'tom-13', name: '13" 랙 탐', label: '13', type: 'rack-tom', sizeInches: 13, targetFundamentalHz: 103.8, targetFundamentalNote: '2G#', targetTopLugHz: t13.topLugHz, targetBottomLugHz: t13.bottomLugHz, resonance, headBias, x: 82, y: 18, radius: 38 },
+      snare,
+      kick,
+      { id: 'tom-14', name: '14" 플로어 탐', label: '14', type: 'floor-tom', sizeInches: 14, targetFundamentalHz: 82.4, targetFundamentalNote: '2E', targetTopLugHz: t14.topLugHz, targetBottomLugHz: t14.bottomLugHz, resonance, headBias, x: 84, y: 50, radius: 42 },
+      { id: 'tom-16', name: '16" 플로어 탐', label: '16', type: 'floor-tom', sizeInches: 16, targetFundamentalHz: 65.4, targetFundamentalNote: '2C', targetTopLugHz: t16.topLugHz, targetBottomLugHz: t16.bottomLugHz, resonance, headBias, x: 76, y: 82, radius: 46 },
     ];
   } else if (numToms === 5) {
-    // 5탐 (6기통: 5탐 + 1킥): 8", 10", 12", 14", 16"
+    // 7기통 (5탐 + 킥 + 스네어): 8", 10", 12", 14", 16" - Table 1 Col 9 Major Thirds
+    const t8 = calc(164.8);
+    const t10 = calc(130.8);
+    const t12 = calc(103.8);
+    const t14 = calc(82.4);
+    const t16 = calc(65.4);
     return [
-      {
-        id: 'tom-8',
-        name: '8" 랙 탐',
-        label: '8',
-        type: 'rack-tom',
-        sizeInches: 8,
-        targetFundamentalHz: 207.7,
-        targetFundamentalNote: '3G#',
-        targetTopLugHz: 290.8,
-        targetBottomLugHz: 415.4,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 18,
-        y: 18,
-        radius: 28,
-      },
-      {
-        id: 'tom-10',
-        name: '10" 랙 탐',
-        label: '10',
-        type: 'rack-tom',
-        sizeInches: 10,
-        targetFundamentalHz: 164.8,
-        targetFundamentalNote: '3E',
-        targetTopLugHz: 230.7,
-        targetBottomLugHz: 329.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 40,
-        y: 16,
-        radius: 32,
-      },
-      {
-        id: 'tom-12',
-        name: '12" 랙 탐',
-        label: '12',
-        type: 'rack-tom',
-        sizeInches: 12,
-        targetFundamentalHz: 130.8,
-        targetFundamentalNote: '3C',
-        targetTopLugHz: 183.1,
-        targetBottomLugHz: 261.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 66,
-        y: 18,
-        radius: 36,
-      },
-      STANDARD_SNARE,
-      STANDARD_KICK,
-      {
-        id: 'tom-14',
-        name: '14" 플로어 탐',
-        label: '14',
-        type: 'floor-tom',
-        sizeInches: 14,
-        targetFundamentalHz: 103.8,
-        targetFundamentalNote: '2G#',
-        targetTopLugHz: 145.3,
-        targetBottomLugHz: 207.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 82,
-        y: 48,
-        radius: 42,
-      },
-      {
-        id: 'tom-16',
-        name: '16" 플로어 탐',
-        label: '16',
-        type: 'floor-tom',
-        sizeInches: 16,
-        targetFundamentalHz: 82.4,
-        targetFundamentalNote: '2E',
-        targetTopLugHz: 115.4,
-        targetBottomLugHz: 164.8,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 76,
-        y: 80,
-        radius: 46,
-      },
+      { id: 'tom-8', name: '8" 랙 탐', label: '8', type: 'rack-tom', sizeInches: 8, targetFundamentalHz: 164.8, targetFundamentalNote: '3E', targetTopLugHz: t8.topLugHz, targetBottomLugHz: t8.bottomLugHz, resonance, headBias, x: 18, y: 18, radius: 28 },
+      { id: 'tom-10', name: '10" 랙 탐', label: '10', type: 'rack-tom', sizeInches: 10, targetFundamentalHz: 130.8, targetFundamentalNote: '3C', targetTopLugHz: t10.topLugHz, targetBottomLugHz: t10.bottomLugHz, resonance, headBias, x: 40, y: 16, radius: 32 },
+      { id: 'tom-12', name: '12" 랙 탐', label: '12', type: 'rack-tom', sizeInches: 12, targetFundamentalHz: 103.8, targetFundamentalNote: '2G#', targetTopLugHz: t12.topLugHz, targetBottomLugHz: t12.bottomLugHz, resonance, headBias, x: 66, y: 18, radius: 36 },
+      snare,
+      kick,
+      { id: 'tom-14', name: '14" 플로어 탐', label: '14', type: 'floor-tom', sizeInches: 14, targetFundamentalHz: 82.4, targetFundamentalNote: '2E', targetTopLugHz: t14.topLugHz, targetBottomLugHz: t14.bottomLugHz, resonance, headBias, x: 82, y: 48, radius: 42 },
+      { id: 'tom-16', name: '16" 플로어 탐', label: '16', type: 'floor-tom', sizeInches: 16, targetFundamentalHz: 65.4, targetFundamentalNote: '2C', targetTopLugHz: t16.topLugHz, targetBottomLugHz: t16.bottomLugHz, resonance, headBias, x: 76, y: 80, radius: 46 },
     ];
   } else if (numToms === 4) {
-    // 4탐 (5기통: 4탐 + 1킥): 10", 12", 14", 16"
+    // 6기통 (4탐 + 킥 + 스네어): 10", 12", 14", 16"
+    const t10 = calc(146.8);
+    const t12 = calc(123.5);
+    const t14 = calc(98.0);
+    const t16 = calc(73.4);
     return [
-      {
-        id: 'tom-10',
-        name: '10" 랙 탐',
-        label: '10',
-        type: 'rack-tom',
-        sizeInches: 10,
-        targetFundamentalHz: 146.8,
-        targetFundamentalNote: '3D',
-        targetTopLugHz: 205.5,
-        targetBottomLugHz: 293.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 36,
-        y: 18,
-        radius: 34,
-      },
-      {
-        id: 'tom-12',
-        name: '12" 랙 탐',
-        label: '12',
-        type: 'rack-tom',
-        sizeInches: 12,
-        targetFundamentalHz: 123.5,
-        targetFundamentalNote: '2B',
-        targetTopLugHz: 172.9,
-        targetBottomLugHz: 247.0,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 64,
-        y: 18,
-        radius: 38,
-      },
-      STANDARD_SNARE,
-      STANDARD_KICK,
-      {
-        id: 'tom-14',
-        name: '14" 플로어 탐',
-        label: '14',
-        type: 'floor-tom',
-        sizeInches: 14,
-        targetFundamentalHz: 98.0,
-        targetFundamentalNote: '2G',
-        targetTopLugHz: 137.2,
-        targetBottomLugHz: 196.0,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 82,
-        y: 46,
-        radius: 42,
-      },
-      {
-        id: 'tom-16',
-        name: '16" 플로어 탐',
-        label: '16',
-        type: 'floor-tom',
-        sizeInches: 16,
-        targetFundamentalHz: 73.4,
-        targetFundamentalNote: '2D',
-        targetTopLugHz: 102.8,
-        targetBottomLugHz: 146.8,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 76,
-        y: 80,
-        radius: 46,
-      },
+      { id: 'tom-10', name: '10" 랙 탐', label: '10', type: 'rack-tom', sizeInches: 10, targetFundamentalHz: 146.8, targetFundamentalNote: '3D', targetTopLugHz: t10.topLugHz, targetBottomLugHz: t10.bottomLugHz, resonance, headBias, x: 36, y: 18, radius: 34 },
+      { id: 'tom-12', name: '12" 랙 탐', label: '12', type: 'rack-tom', sizeInches: 12, targetFundamentalHz: 123.5, targetFundamentalNote: '2B', targetTopLugHz: t12.topLugHz, targetBottomLugHz: t12.bottomLugHz, resonance, headBias, x: 64, y: 18, radius: 38 },
+      snare,
+      kick,
+      { id: 'tom-14', name: '14" 플로어 탐', label: '14', type: 'floor-tom', sizeInches: 14, targetFundamentalHz: 98.0, targetFundamentalNote: '2G', targetTopLugHz: t14.topLugHz, targetBottomLugHz: t14.bottomLugHz, resonance, headBias, x: 82, y: 46, radius: 42 },
+      { id: 'tom-16', name: '16" 플로어 탐', label: '16', type: 'floor-tom', sizeInches: 16, targetFundamentalHz: 73.4, targetFundamentalNote: '2D', targetTopLugHz: t16.topLugHz, targetBottomLugHz: t16.bottomLugHz, resonance, headBias, x: 76, y: 80, radius: 46 },
     ];
   } else if (numToms === 3) {
-    // 3탐 (4기통: 3탐 + 1킥): 10", 12", 14"
+    // 5기통 (3탐 + 킥 + 스네어): 10", 12", 14"
+    const t10 = calc(130.8);
+    const t12 = calc(110.0);
+    const t14 = calc(87.3);
     return [
-      {
-        id: 'tom-10',
-        name: '10" 랙 탐',
-        label: '10',
-        type: 'rack-tom',
-        sizeInches: 10,
-        targetFundamentalHz: 130.8,
-        targetFundamentalNote: '3C',
-        targetTopLugHz: 183.1,
-        targetBottomLugHz: 261.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 38,
-        y: 18,
-        radius: 34,
-      },
-      {
-        id: 'tom-12',
-        name: '12" 랙 탐',
-        label: '12',
-        type: 'rack-tom',
-        sizeInches: 12,
-        targetFundamentalHz: 110.0,
-        targetFundamentalNote: '2A',
-        targetTopLugHz: 154.0,
-        targetBottomLugHz: 220.0,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 64,
-        y: 18,
-        radius: 38,
-      },
-      STANDARD_SNARE,
-      STANDARD_KICK,
-      {
-        id: 'tom-14',
-        name: '14" 플로어 탐',
-        label: '14',
-        type: 'floor-tom',
-        sizeInches: 14,
-        targetFundamentalHz: 87.3,
-        targetFundamentalNote: '2F',
-        targetTopLugHz: 122.2,
-        targetBottomLugHz: 174.6,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 82,
-        y: 52,
-        radius: 42,
-      },
+      { id: 'tom-10', name: '10" 랙 탐', label: '10', type: 'rack-tom', sizeInches: 10, targetFundamentalHz: 130.8, targetFundamentalNote: '3C', targetTopLugHz: t10.topLugHz, targetBottomLugHz: t10.bottomLugHz, resonance, headBias, x: 38, y: 18, radius: 34 },
+      { id: 'tom-12', name: '12" 랙 탐', label: '12', type: 'rack-tom', sizeInches: 12, targetFundamentalHz: 110.0, targetFundamentalNote: '2A', targetTopLugHz: t12.topLugHz, targetBottomLugHz: t12.bottomLugHz, resonance, headBias, x: 64, y: 18, radius: 38 },
+      snare,
+      kick,
+      { id: 'tom-14', name: '14" 플로어 탐', label: '14', type: 'floor-tom', sizeInches: 14, targetFundamentalHz: 87.3, targetFundamentalNote: '2F', targetTopLugHz: t14.topLugHz, targetBottomLugHz: t14.bottomLugHz, resonance, headBias, x: 82, y: 52, radius: 42 },
     ];
   } else {
-    // 2탐 (3기통: 2탐 + 1킥): 12", 16"
+    // 4기통 (2탐 + 킥 + 스네어): 12", 16"
+    const t12 = calc(110.0);
+    const t16 = calc(73.4);
     return [
-      {
-        id: 'tom-12',
-        name: '12" 랙 탐',
-        label: '12',
-        type: 'rack-tom',
-        sizeInches: 12,
-        targetFundamentalHz: 110.0,
-        targetFundamentalNote: '2A',
-        targetTopLugHz: 154.0,
-        targetBottomLugHz: 220.0,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 50,
-        y: 18,
-        radius: 38,
-      },
-      STANDARD_SNARE,
-      STANDARD_KICK,
-      {
-        id: 'tom-16',
-        name: '16" 플로어 탐',
-        label: '16',
-        type: 'floor-tom',
-        sizeInches: 16,
-        targetFundamentalHz: 73.4,
-        targetFundamentalNote: '2D',
-        targetTopLugHz: 102.8,
-        targetBottomLugHz: 146.8,
-        resonance: 'medium',
-        headBias: 'bottom-higher',
-        x: 80,
-        y: 60,
-        radius: 46,
-      },
+      { id: 'tom-12', name: '12" 랙 탐', label: '12', type: 'rack-tom', sizeInches: 12, targetFundamentalHz: 110.0, targetFundamentalNote: '2A', targetTopLugHz: t12.topLugHz, targetBottomLugHz: t12.bottomLugHz, resonance, headBias, x: 50, y: 18, radius: 38 },
+      snare,
+      kick,
+      { id: 'tom-16', name: '16" 플로어 탐', label: '16', type: 'floor-tom', sizeInches: 16, targetFundamentalHz: 73.4, targetFundamentalNote: '2D', targetTopLugHz: t16.topLugHz, targetBottomLugHz: t16.bottomLugHz, resonance, headBias, x: 80, y: 60, radius: 46 },
     ];
   }
 }
 
-// Helper to build kit strictly matching real drumming piece counts (탐 + 킥 = 기통)
-export function getKitByPieceCount(pieceCount: number): DrumItem[] {
-  // 7기통 -> 6탐 + 1킥
-  // 6기통 -> 5탐 + 1킥
-  // 5기통 -> 4탐 + 1킥
-  // 4기통 -> 3탐 + 1킥
-  // 3기통 -> 2탐 + 1킥
-  const numToms = Math.max(2, Math.min(6, pieceCount - 1));
-  return getKitByTomCount(numToms);
+// Helper to build kit strictly matching real drumming piece counts
+export function getKitByPieceCount(pieceCount: number, resonance: ResonanceType = 'high'): DrumItem[] {
+  const numToms = Math.max(2, Math.min(6, pieceCount - 2));
+  return getKitByTomCount(numToms, resonance);
 }
 
-// Default Full Kit: 6기통 (5탐 + 킥 + 14" 스네어)
-export const DEFAULT_DRUM_KIT: DrumItem[] = getKitByTomCount(5);
+// Default Full Kit: 7기통 (5탐 + 1킥 + 1스네어) with 'high' resonance
+export const DEFAULT_DRUM_KIT: DrumItem[] = getKitByTomCount(5, 'high');
 

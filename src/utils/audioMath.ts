@@ -71,6 +71,89 @@ export function parabolicPeakInterpolation(
 }
 
 /**
+ * Detects the dominant peak frequency directly from the FFT spectrum (highest intensity).
+ * Directly matches the brightest peak visible on the spectrometer.
+ * Parabolic interpolation provides sub-bin precision (0.1 Hz accuracy).
+ */
+export function detectPeakFrequencyFromFFT(
+  floatFreqData: Float32Array,
+  sampleRate: number,
+  fftSize: number,
+  options: {
+    minHz?: number;
+    maxHz?: number;
+    filterCenterHz?: number;
+    filterBandwidthPct?: number;
+    filterEnabled?: boolean;
+    minDbThreshold?: number;
+  } = {}
+): { frequency: number; magnitude: number; clarity: number } | null {
+  const minHz = options.minHz ?? 30;
+  const maxHz = options.maxHz ?? 650;
+  const filterEnabled = options.filterEnabled ?? false;
+  const filterCenterHz = options.filterCenterHz;
+  const filterBandwidthPct = options.filterBandwidthPct ?? 0.25;
+  const minDbThreshold = options.minDbThreshold ?? -70; // dB
+
+  const binHz = sampleRate / fftSize;
+  const binCount = floatFreqData.length;
+
+  let startHz = minHz;
+  let endHz = maxHz;
+
+  if (filterEnabled && filterCenterHz && filterCenterHz > 0) {
+    startHz = Math.max(minHz, filterCenterHz * (1 - filterBandwidthPct));
+    endHz = Math.min(maxHz, filterCenterHz * (1 + filterBandwidthPct));
+  }
+
+  const startBin = Math.max(1, Math.floor(startHz / binHz));
+  const endBin = Math.min(binCount - 2, Math.ceil(endHz / binHz));
+
+  if (startBin >= endBin) return null;
+
+  // Find the bin with the highest magnitude (peak intensity) in the spectrum
+  let maxDb = -Infinity;
+  let peakBin = -1;
+
+  for (let b = startBin; b <= endBin; b++) {
+    const val = floatFreqData[b];
+    if (val > maxDb) {
+      maxDb = val;
+      peakBin = b;
+    }
+  }
+
+  // Reject if below minimum dB threshold
+  if (maxDb < minDbThreshold || peakBin <= 0) {
+    return null;
+  }
+
+  const alpha = floatFreqData[peakBin - 1];
+  const beta = floatFreqData[peakBin];
+  const gamma = floatFreqData[peakBin + 1];
+
+  // Peak prominence check (must stick out above neighbor bins by at least 1.5 dB)
+  const avgNeighbor = (alpha + gamma) / 2;
+  const prominence = beta - avgNeighbor;
+  if (prominence < 1.5) {
+    return null; // Flat background noise floor, not a distinct resonance peak
+  }
+
+  // Sub-bin parabolic peak interpolation
+  const interp = parabolicPeakInterpolation(floatFreqData, peakBin, sampleRate, fftSize);
+  const refinedFreq = Math.round(interp.freq * 10) / 10;
+
+  // Clarity heuristic based on peak prominence above local floor
+  const clarity = Math.min(1.0, Math.max(0.6, prominence / 12));
+
+  return {
+    frequency: refinedFreq,
+    magnitude: interp.magnitude,
+    clarity,
+  };
+}
+
+/**
  * Autocorrelation-based pitch detection with bandpass filtering for drum tones
  */
 export function detectPitchYIN(

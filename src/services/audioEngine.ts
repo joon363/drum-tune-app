@@ -1,4 +1,4 @@
-import { detectPitchYIN, extractHarmonicPeaks, frequencyToNote, calculateCentsDifference } from '../utils/audioMath';
+import { detectPeakFrequencyFromFFT, extractHarmonicPeaks, frequencyToNote } from '../utils/audioMath';
 import { DetectedPitchInfo } from '../types';
 
 export type PitchCallback = (info: DetectedPitchInfo) => void;
@@ -7,6 +7,12 @@ export type SpectrogramCallback = (
   floatFreqData: Float32Array,
   sampleRate: number
 ) => void;
+
+interface PeakSample {
+  freq: number;
+  magnitude: number;
+  timestamp: number;
+}
 
 class AudioEngine {
   private audioCtx: AudioContext | null = null;
@@ -31,9 +37,11 @@ class AudioEngine {
   private filterEnabled: boolean = false;
   private filterTargetHz: number = 0;
 
-  // Transient / Drum hit detection
-  private prevRms: number = 0;
-  private hitHoldCountdown: number = 0;
+  // Absolute time-based sliding window peak smoothing (seconds)
+  private smoothingDurationSec: number = 1.0; // default: 1.0초 (1000ms) - 메인 화면 피크 1초에 1번 갱신
+  private peakWindow: PeakSample[] = [];
+  private lastEmittedTime: number = 0;
+  private lastEmittedFreq: number = 0;
   private lastPitchInfo: DetectedPitchInfo | null = null;
 
   public async start(): Promise<boolean> {
@@ -68,6 +76,8 @@ class AudioEngine {
       this.sourceNode.connect(this.analyser);
 
       this.isRunning = true;
+      this.lastEmittedTime = performance.now();
+      this.peakWindow = [];
       this.loop();
       return true;
     } catch (err) {
@@ -114,6 +124,20 @@ class AudioEngine {
     this.filterTargetHz = targetHz;
   }
 
+  public setSmoothingDurationSec(sec: number): void {
+    this.smoothingDurationSec = Math.max(0, Math.min(3.0, sec));
+  }
+
+  public getSmoothingDurationSec(): number {
+    return this.smoothingDurationSec;
+  }
+
+  // Backward compatible alias
+  public setSmoothingWindow(value: number): void {
+    const duration = value > 2 ? 1.0 : value;
+    this.setSmoothingDurationSec(duration);
+  }
+
   public getSampleRate(): number {
     return this.audioCtx?.sampleRate || 44100;
   }
@@ -149,38 +173,38 @@ class AudioEngine {
       this.onSpectrogramFrame(this.byteFreqBuffer, this.floatFreqBuffer, sampleRate);
     }
 
-    // Drum hit transient detection
-    let sumSquares = 0;
-    for (let i = 0; i < this.timeDomainBuffer.length; i++) {
-      sumSquares += this.timeDomainBuffer[i] * this.timeDomainBuffer[i];
-    }
-    const currentRms = Math.sqrt(sumSquares / this.timeDomainBuffer.length);
-    const rmsDelta = currentRms - this.prevRms;
-    this.prevRms = currentRms;
+    // Direct FFT Peak Detection (matches spectrometer highest intensity peak exactly)
+    const peakResult = detectPeakFrequencyFromFFT(
+      this.floatFreqBuffer,
+      sampleRate,
+      this.analyser.fftSize,
+      {
+        minHz: 30,
+        maxHz: 650,
+        filterEnabled: this.filterEnabled,
+        filterCenterHz: this.filterTargetHz,
+        filterBandwidthPct: 0.25,
+        minDbThreshold: -70,
+      }
+    );
 
-    // A drum hit usually creates a sharp sudden onset
-    const isOnset = rmsDelta > 0.015 && currentRms > 0.02;
+    const now = performance.now();
+    const intervalMs = this.smoothingDurationSec * 1000;
 
-    if (isOnset || this.hitHoldCountdown <= 0) {
-      // Analyze pitch
-      const pitchResult = detectPitchYIN(
-        this.timeDomainBuffer,
-        sampleRate,
-        45,
-        650,
-        this.filterEnabled ? this.filterTargetHz : undefined,
-        0.25
-      );
+    if (intervalMs <= 20) {
+      // Zero-delay mode (무지연 즉각 반응)
+      if (peakResult) {
+        const smoothedFreq = Math.round(peakResult.frequency * 10) / 10;
+        this.lastEmittedFreq = smoothedFreq;
 
-      if (pitchResult && pitchResult.clarity > 0.65) {
-        const noteInfo = frequencyToNote(pitchResult.frequency);
-        const harmonics = extractHarmonicPeaks(this.floatFreqBuffer, sampleRate, pitchResult.frequency);
+        const noteInfo = frequencyToNote(smoothedFreq);
+        const harmonics = extractHarmonicPeaks(this.floatFreqBuffer, sampleRate, smoothedFreq);
 
         const pitchInfo: DetectedPitchInfo = {
-          frequency: pitchResult.frequency,
+          frequency: smoothedFreq,
           note: noteInfo.fullName,
           cents: noteInfo.cents,
-          clarity: pitchResult.clarity,
+          clarity: 1.0,
           timestamp: Date.now(),
           subharmonicHz: harmonics.subharmonicHz,
           fifthHarmonicHz: harmonics.fifthHarmonicHz,
@@ -188,14 +212,80 @@ class AudioEngine {
         };
 
         this.lastPitchInfo = pitchInfo;
-        this.hitHoldCountdown = 12; // hold for ~200ms
 
         if (this.onPitchDetected) {
           this.onPitchDetected(pitchInfo);
         }
       }
     } else {
-      this.hitHoldCountdown--;
+      if (peakResult) {
+        this.peakWindow.push({
+          freq: peakResult.frequency,
+          magnitude: peakResult.magnitude,
+          timestamp: now,
+        });
+      }
+
+      // Maintain time-based sliding window of samples within intervalMs
+      while (this.peakWindow.length > 0 && now - this.peakWindow[0].timestamp > intervalMs) {
+        this.peakWindow.shift();
+      }
+
+      // Check if interval has elapsed since last update (strictly 1 update per interval, e.g. 1초에 한 번)
+      const timeSinceLastEmit = now - this.lastEmittedTime;
+
+      if (timeSinceLastEmit >= intervalMs) {
+        this.lastEmittedTime = now;
+
+        if (this.peakWindow.length > 0) {
+          // Find loudest peak sample in this sliding window (dominant drum strike)
+          let maxMagSample = this.peakWindow[0];
+          for (let i = 1; i < this.peakWindow.length; i++) {
+            if (this.peakWindow[i].magnitude > maxMagSample.magnitude) {
+              maxMagSample = this.peakWindow[i];
+            }
+          }
+
+          // Calculate power-weighted average focused on the loudest strike peak in the window
+          let totalWeight = 0;
+          let weightedSum = 0;
+          for (let i = 0; i < this.peakWindow.length; i++) {
+            const s = this.peakWindow[i];
+            const dbDiff = s.magnitude - maxMagSample.magnitude;
+            if (dbDiff >= -12) {
+              const weight = Math.pow(10, dbDiff / 10);
+              weightedSum += s.freq * weight;
+              totalWeight += weight;
+            }
+          }
+
+          const smoothedFreq = totalWeight > 0
+            ? Math.round((weightedSum / totalWeight) * 10) / 10
+            : Math.round(maxMagSample.freq * 10) / 10;
+
+          this.lastEmittedFreq = smoothedFreq;
+
+          const noteInfo = frequencyToNote(smoothedFreq);
+          const harmonics = extractHarmonicPeaks(this.floatFreqBuffer, sampleRate, smoothedFreq);
+
+          const pitchInfo: DetectedPitchInfo = {
+            frequency: smoothedFreq,
+            note: noteInfo.fullName,
+            cents: noteInfo.cents,
+            clarity: 1.0,
+            timestamp: Date.now(),
+            subharmonicHz: harmonics.subharmonicHz,
+            fifthHarmonicHz: harmonics.fifthHarmonicHz,
+            overtoneHz: harmonics.overtoneHz,
+          };
+
+          this.lastPitchInfo = pitchInfo;
+
+          if (this.onPitchDetected) {
+            this.onPitchDetected(pitchInfo);
+          }
+        }
+      }
     }
 
     this.animFrameId = requestAnimationFrame(this.loop);
