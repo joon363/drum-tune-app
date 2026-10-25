@@ -116,7 +116,7 @@ export const GlobalSettingsModal: React.FC<GlobalSettingsModalProps> = ({
             type="button"
             onClick={() => setActiveTab('kick')}
             className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 whitespace-nowrap transition ${activeTab === 'kick'
-              ? 'bg-rose-500 text-white font-bold'
+              ? 'bg-cyan-500 text-slate-950 font-bold'
               : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
           >
@@ -278,7 +278,7 @@ export const GlobalSettingsModal: React.FC<GlobalSettingsModalProps> = ({
                           onApplyKickRecommendation(rec);
                           onClose();
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition"
+                        className="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition"
                       >
                         적용
                       </button>

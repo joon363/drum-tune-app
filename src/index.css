@@ -45,7 +45,7 @@ body {
 }
 
 /* Custom Range Input styling for comfortable mobile touch */
-input[type="range"] {
+input[type="range"]:not(.vertical-slider) {
   -webkit-appearance: none;
   background: transparent;
   touch-action: manipulation;
@@ -53,23 +53,88 @@ input[type="range"] {
   cursor: pointer;
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"]:not(.vertical-slider)::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 24px;
-  width: 24px;
+  height: 20px;
+  width: 20px;
   border-radius: 50%;
   background: #38bdf8;
   cursor: pointer;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.8), 0 2px 4px rgba(0, 0, 0, 0.4);
   border: 2px solid #ffffff;
-  margin-top: -8px;
+  margin-top: -6px;
+  box-shadow: none;
 }
 
-input[type="range"]::-webkit-slider-runnable-track {
+input[type="range"]:not(.vertical-slider)::-webkit-slider-runnable-track {
   width: 100%;
   height: 8px;
   cursor: pointer;
   background: #1e293b;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Vertical Slider styling - perfectly centered thumb, zero blurry glow */
+input[type="range"].vertical-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 24px;
+  height: 115px;
+  background: transparent;
+  cursor: pointer;
+  margin: 0 auto;
+  padding: 0;
+  display: block;
+}
+
+input[type="range"].vertical-slider::-webkit-slider-runnable-track {
+  width: 6px;
+  height: 100%;
+  cursor: pointer;
+  background: #1e293b;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 0 auto;
+}
+
+input[type="range"].vertical-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #22d3ee;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+  margin-left: -7px;
+  margin-top: 0;
+  box-shadow: none;
+}
+
+input[type="range"].vertical-slider.vertical-slider-amber::-webkit-slider-thumb {
+  background: #fbbf24;
+}
+
+input[type="range"].vertical-slider::-moz-range-track {
+  width: 6px;
+  height: 100%;
+  background: #1e293b;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+input[type="range"].vertical-slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #22d3ee;
+  border: 2px solid #ffffff;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+input[type="range"].vertical-slider.vertical-slider-amber::-moz-range-thumb {
+  background: #fbbf24;
 }

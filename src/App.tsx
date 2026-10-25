@@ -51,9 +51,11 @@ export const App: React.FC = () => {
   // Current selected drum
   const currentDrum = drums.find((d) => d.id === selectedDrumId) || drums[0];
 
-  // Active Target Frequency (윗면 러그 또는 아랫면 러그)
+  // Active Target Frequency (기본음, 윗면 러그, 또는 아랫면 러그)
   const activeTargetHz =
-    targetHead === 'top'
+    targetHead === 'fundamental'
+      ? currentDrum.targetFundamentalHz
+      : targetHead === 'top'
       ? currentDrum.targetTopLugHz
       : currentDrum.targetBottomLugHz;
 
@@ -150,7 +152,12 @@ export const App: React.FC = () => {
       prev.map((d) => {
         if (d.id !== selectedDrumId) return d;
         const current = d.completedTuning || {};
-        const key = head === 'top' ? 'topLug' : 'bottomLug';
+        const key =
+          head === 'fundamental'
+            ? 'fundamental'
+            : head === 'top'
+            ? 'topLug'
+            : 'bottomLug';
         return {
           ...d,
           completedTuning: {

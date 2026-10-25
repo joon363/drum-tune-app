@@ -318,7 +318,7 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
   return (
     <div className="fixed inset-0 z-40 bg-black flex flex-col select-none text-white overflow-hidden">
       {/* Top Header (Clean, sleek, and uncluttered) */}
-      <div className="pt-2 pb-1.5 px-4 bg-slate-950/90 border-b border-slate-900/90 flex flex-col z-30 backdrop-blur-md">
+      <div className="pt-2 pb-1.5 px-4 bg-slate-950 border-b border-slate-900 flex flex-col z-30">
         <div className="flex items-center justify-between relative">
           {/* Back button */}
           <button
@@ -356,7 +356,7 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
                     className="fixed inset-0 z-40"
                     onClick={() => setIsDropdownOpen(false)}
                   />
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-56 max-h-64 overflow-y-auto bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl z-50 p-1 divide-y divide-slate-800/60 backdrop-blur-md">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-56 max-h-64 overflow-y-auto bg-slate-900 border border-slate-700 rounded-xl z-50 p-1 divide-y divide-slate-800">
                     {drums.map((d) => {
                       const isCur = d.id === drum.id;
                       return (
@@ -466,7 +466,7 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
                 {/* Left Badge with Label, Note & Hz */}
                 <div className="absolute left-2.5 -translate-y-1/2 flex items-center">
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold backdrop-blur-md flex items-center gap-1.5 ${target.badgeClass}`}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold flex items-center gap-1.5 ${target.badgeClass}`}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${target.dotClass}`} />
                     <span>{target.label}</span>
@@ -488,7 +488,7 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
 
               {/* Right Live Peak Badge without glow */}
               <div className="absolute right-3 -translate-y-1/2 flex items-center">
-                <span className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-slate-950 text-emerald-300 border border-emerald-400 flex items-center gap-1.5 backdrop-blur-md">
+                <span className="px-2.5 py-1 rounded-lg text-[11px] font-mono font-bold bg-slate-950 text-emerald-300 border border-emerald-400 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span className="font-sans text-[10px] text-emerald-400 font-semibold">Peak</span>
                   <span className="text-white font-extrabold">{currentHz.toFixed(1)}Hz</span>
@@ -499,14 +499,14 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
           )}
         </div>
 
-        {/* Floating Controls on Bottom-Right (세로 슬라이더 & 투명 배경 & 무글로우) */}
-        <div className="fixed bottom-5 right-3 z-40 bg-transparent flex items-end gap-2.5 select-none pointer-events-auto">
+        {/* Floating Controls on Bottom-Right (세로 슬라이더 & 투명 배경 & 무글로우 & 중앙 정렬) */}
+        <div className="fixed bottom-5 right-3 z-40 bg-transparent flex items-end gap-3 select-none pointer-events-auto">
           {/* 감도 (Gain) Vertical Slider */}
-          <div className="flex flex-col items-center gap-1 bg-transparent">
-            <span className="text-[10px] font-mono text-cyan-300 font-bold bg-black/70 px-1.5 py-0.5 rounded border border-cyan-800/40">
+          <div className="flex flex-col items-center gap-1.5 w-12 bg-transparent">
+            <span className="text-[10px] font-mono text-cyan-300 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-center">
               x{gain.toFixed(1)}
             </span>
-            <div className="py-1 flex items-center justify-center">
+            <div className="flex items-center justify-center w-full py-1">
               <input
                 type="range"
                 min="0.4"
@@ -514,28 +514,21 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
                 step="0.05"
                 value={gain}
                 onChange={(e) => setGain(parseFloat(e.target.value))}
-                className="accent-cyan-400 cursor-pointer"
-                style={{
-                  writingMode: 'vertical-lr',
-                  direction: 'rtl',
-                  WebkitAppearance: 'slider-vertical',
-                  width: '28px',
-                  height: '115px',
-                }}
+                className="vertical-slider cursor-pointer"
               />
             </div>
-            <span className="text-[10px] font-semibold text-cyan-400 flex items-center gap-0.5 bg-black/70 px-1.5 py-0.5 rounded border border-cyan-800/40">
+            <span className="text-[10px] font-semibold text-cyan-400 flex items-center justify-center gap-0.5 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-center">
               <Sliders size={11} />
               감도
             </span>
           </div>
 
           {/* 속도 (Speed) Vertical Slider */}
-          <div className="flex flex-col items-center gap-1 bg-transparent">
-            <span className="text-[10px] font-mono text-amber-300 font-bold bg-black/70 px-1.5 py-0.5 rounded border border-amber-800/40">
+          <div className="flex flex-col items-center gap-1.5 w-12 bg-transparent">
+            <span className="text-[10px] font-mono text-amber-300 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-center">
               {speed}단계
             </span>
-            <div className="py-1 flex items-center justify-center">
+            <div className="flex items-center justify-center w-full py-1">
               <input
                 type="range"
                 min="1"
@@ -543,17 +536,10 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
                 step="1"
                 value={speed}
                 onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
-                className="accent-amber-400 cursor-pointer"
-                style={{
-                  writingMode: 'vertical-lr',
-                  direction: 'rtl',
-                  WebkitAppearance: 'slider-vertical',
-                  width: '28px',
-                  height: '115px',
-                }}
+                className="vertical-slider vertical-slider-amber cursor-pointer"
               />
             </div>
-            <span className="text-[10px] font-semibold text-amber-400 flex items-center gap-0.5 bg-black/70 px-1.5 py-0.5 rounded border border-amber-800/40">
+            <span className="text-[10px] font-semibold text-amber-400 flex items-center justify-center gap-0.5 bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-center">
               <Zap size={11} />
               속도
             </span>

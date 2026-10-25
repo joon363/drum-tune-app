@@ -28,13 +28,14 @@ export interface DrumItem {
 }
 
 export interface DrumCompletedTuning {
+  fundamental?: boolean;
   topFundamental?: boolean;
   topLug?: boolean;
   bottomFundamental?: boolean;
   bottomLug?: boolean;
 }
 
-export type TuningTargetHead = 'top' | 'bottom';
+export type TuningTargetHead = 'fundamental' | 'top' | 'bottom';
 export type TuningMode = 'fundamental' | 'lug';
 
 export interface TuningGuidePreset {
