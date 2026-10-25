@@ -1,0 +1,424 @@
+=== PAGE 1 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Drum-Set Tuning Guide 
+Tune-Bot enables you to accurately tune your drums to a specific notes or frequencies and once 
+you know the notes or frequencies you want, you can quickly tune and retune your drums. This 
+tuning guide will help you determine the notes and frequencies to use for your specific drum-
+set.  Then you can use tune-bot to tune your set to those specific values. After you’ve tuned 
+your set to your liking you can also store the pitches of all your drums in tune-bot to allow you 
+to quickly retune to the same sound over and over again. 
+Tom Tuning 
+A good way to tune your toms and your snare as well, if you like, is to use notes in musical 
+intervals or chords for the fundamental pitches of the drums. One consideration, in selecting 
+which interval or chord to use for tuning, is the number of toms (and optionally snare) in your 
+set. If you have a small number of drums you might prefer larger intervals between drums 
+whereas with a large number of drums you might be better with smaller intervals, otherwise, 
+you might span too small or too large a range of pitches with your drums. 
+ 
+Summary of Tuning Steps 
+1) Choose the fundamental notes for every drum using Table 1. 
+2) Decide on the amount of Resonance1: low, medium, high or maximum and if top or 
+bottom head is higher in lug-frequency. 
+3) Calculate the top and bottom head lug-frequency for every drum head. 
+For each drum: 
+4) Tune top and bottom heads to required lug-frequency. 
+5) Equalize top and bottom heads. 
+Note: These formulas may not be exact. Depending on your drums dimensions you may have to 
+fine tune the lug pitches to get the desired note: These formulas will however get you close! 
+  
+                                                           
+1 Explained in next section. 
+
+=== PAGE 2 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Details of Tuning Steps 
+Fundamental Note Selection 
+Suggested tunings for a variety of drum set configurations ranging from 2 to 6 toms are listed in 
+the following table. The table also covers most popular tom sizes ranging from 8 to 16 inches in 
+diameter. All the notes in any of these tunings can be moved up or down a few semi-tones (the 
+distance between A and A#; a half-step) to suit individual tastes without changing the intervals. 
+Only the fundamental pitch of the drum, i.e., the lowest pitch of the drum (obtained when the 
+drum is hit in the center and is mounted on a stand), is listed in the chart, not the lug-pitches. 
+You will get the same fundamental pitch whether you hit the top or bottom head since the top 
+and bottom heads vibrate in unison when the drum is hit in the center. The corresponding top 
+and bottom head lug-pitches, however, are independent of each other and can be 1.2 to 2.3 
+times higher than the fundamental pitch for typical drum sizes. 
+Table 1. Recommended Fundamental Notes and Frequencies for Various Tom Configurations.  
+  
+Tom 
+Sizes 
+  
+Number of Toms (Notes and Frequencies in Hz) 
+2 2 3 3 3 3 4 4 5 6 
+8         3E 
+165 Hz 
+  3G#  
+208 Hz 
+10 3C 
+131 Hz 
+ 3C 
+131 Hz 
+3C 
+131 Hz 
+  3D 
+147 Hz 
+3E 
+165 Hz 
+3C 
+131 Hz 
+3E 
+165 Hz 
+12  2A 
+110 Hz 
+2A 
+110 Hz 
+2G 
+98 Hz 
+2A 
+110 Hz 
+2A 
+110 Hz 
+2B 
+124 Hz 
+2B 
+124 Hz 
+   2G# 
+104 Hz 
+3C 
+131 Hz 
+13     2F 
+87.3Hz 
+       2G# 
+104 Hz 
+14 2F 
+87.3 Hz 
+ 2F 
+87.3Hz 
+  2F 
+87.3 Hz 
+2G 
+98 Hz 
+  2F# 
+92.5 Hz 
+2E 
+82.4 Hz 
+2E 
+82.4 Hz 
+16  2D 
+73.4 Hz 
+ 2D 
+73.4  Hz 
+  2C# 
+69.3 Hz 
+2C 
+65.4 Hz 
+2D 
+73.4 Hz 
+  2C# 
+69.3 Hz 
+2C 
+65.4 Hz 
+2C 
+65.4 Hz 
+Type of 
+Interval 
+Perfect 
+Fifth 
+Perfect 
+Fifth 
+Major 
+Chord 
+Perfect 
+Fourths 
+Major 
+Thirds 
+Perfect 
+Fourths 
+Call to 
+Post 
+Perfect 
+Fourths 
+Major 
+Thirds 
+Major 
+Thirds 
+ 
+Resonance and Top or Bottom Head Tuning Options 
+With a two-headed drum, the fundamental pitch of the drum can be varied by adjusting either 
+top or bottom heads so there are an infinite number of top and bottom lug-pitch combinations 
+for any specific fundamental pitch. The resonance (or sustain) of the drum depends on the lug-
+frequency relationship between the top and bottom heads. After you decide on the amount of 
+drum resonance you want, from low to high, specific top and bottom lug pitches can be easily 
+determined for any desired fundamental pitch. 
+
+=== PAGE 3 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Selecting the amount of resonance that is right for you depends on the type of sound you want: 
+maximum resonance and slower decay is obtained with top and bottom lug-pitches tuned to 
+the same pitch; alternatively, lower resonance and quicker decay is obtained from larger 
+differences in top and bottom lug-pitches. For live performance more resonance might be 
+desirable whereas for a recording situation, it might be better to have less resonance and faster 
+decay. Another consideration if the heads are tuned differently is which head is higher in pitch. 
+Again this is a personal choice: typically, a more controlled sound is obtained with the bottom 
+head tuned higher than the top head, a good choice for recording. On the other hand, more 
+attack is attained with the top head tuned to the higher lug-pitch. 
+Calculating the Top and Bottom Lug-Frequencies 
+The following lug-frequency formulas are values for typical drums. The actual values for your 
+drums will depend on the ratio of the drum shell diameter to the depth, the type of drum heads 
+you are using and if the top and bottom heads are the same type.  Use these formulas as a 
+starting point and adjust them to suit your specific drums and heads. 
+Maximum Resonance: Tune top and bottom lug pitches to the same pitch. Depending on the 
+specific drum, the lug pitch will be between 1.6 and 1.9 times higher in frequency than the 
+fundamental pitch. To start, multiply the frequency of the desired fundamental note by 1.75 
+and tune both top and bottom lug-pitches to that frequency. Then, measure the fundamental 
+pitch of the drum and adjust the pitch of top and bottom heads accordingly. 
+Example 1.  Maximum Resonance with 4 Toms: 10”, 12”, 14” and 16”. Both Heads Equal. 
+Tom Size  Fund. Note Fund. Freq.  (Hz) Top and Bottom Lug Freq. (Hz) 
+10 3D 147 257  (= 147 x 1.75) 
+12 2B 124 217 (= 124 x 1.75) 
+14 2G 98 172 (= 98 x 1.75) 
+16 2D 73.4 128 (= 73.4 x 1.75) 
+ 
+  
+
+=== PAGE 4 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+High Resonance: With the bottom head tuned higher, multiply the frequency of the desired 
+fundamental note by 1.85 and tune the bottom head lug-pitch to that frequency. Then tune the 
+top head lug-pitch to about 1.5 times the fundamental frequency. Then, measure the 
+fundamental pitch of the drum and adjust the pitch of the top head until it equals the desired 
+frequency.  For high resonance with the bottom head tuned lower, simply switch the numbers 
+in the two columns. 
+Example 2.  High Resonance with 4 Toms: 10”, 12”, 14” and 16”. Bottom Head Higher. 
+Tom Size  Fund. Note Fund. Freq.  (Hz) Top Lug Freq. (Hz) Bottom Lug Freq. (Hz) 
+10 3D 147 221 (= 147 x 1.5) 272  (= 147 x 1.85) 
+12 2B 124 186 (= 124 x 1.5) 229 (= 124 x 1.85) 
+14 2G 98 147 (= 98 x 1.5) 181 (= 98 x 1.85) 
+16 2D 73.4 110 (=  73.4 x 1.5) 136 (= 73.4 x 1.85) 
+ 
+ 
+Medium Resonance: Follow the instructions in the preceding paragraph using 2.0 times and 1.4 
+times the fundamental frequency instead of 1.85 and 1.5 times. 
+Example 3.  Medium Resonance with 4 Toms: 10”, 12”, 14” and 16”. Bottom Head Higher. 
+Tom Size  Fund. Note Fund. Freq.  (Hz) Top Lug Freq. (Hz) Bottom Lug Freq. (Hz) 
+10 3D 147 206 (= 147 x 1.4) 294  (= 147 x 2) 
+12 2B 124 174 (= 124 x 1.4) 248 (= 124 x 2) 
+14 2G 98 137 (= 98 x 1.4) 196 (= 98 x 2) 
+16 2D 73.4 103 (=  73.4 x 1.4) 147 (= 73.4 x 2) 
+ 
+ 
+Low Resonance: Follow the same instructions using 2.3 and 1.2 times the fundamental 
+frequency instead of 1.85 and 1.5 times. 
+Example 4.  Low Resonance with 4 Toms: 10”, 12”, 14” and 16”. Bottom Head Higher. 
+Tom Size  Fund. Note Fund. Freq.  (Hz) Top Lug Freq. (Hz) Bottom Lug Freq. (Hz) 
+10 3D 147 176 (= 147 x 1.2) 338  (= 147 x 2.3) 
+12 2B 124 149 (= 124 x 1.2) 285 (= 124 x 2.3) 
+14 2G 98 118 (= 98 x 1.2) 225 (= 98 x 2.3) 
+16 2D 73.4   88 (=  73.4 x 1.2) 169 (= 73.4 x 2.3) 
+ 
+  
+
+=== PAGE 5 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Snare Drum Tuning 
+Most 14” diameter snare drums sound good with a fundamental pitch in the range of 3E to 3A#. 
+Some drummers like to have the fundamental pitch of their snare in the same interval 
+relationship as their toms while others like to set it independently; it’s really a matter of 
+personal preference.   
+A good pitch relationship for the drum heads is to tune the lug pitch of the bottom head a 
+perfect fifth higher than the top head (1.5 times higher in frequency, see Appendix).  This 
+combination works well for a couple of reasons: a higher-pitch resonant head helps minimize 
+snare buzz and a lower-pitch batter head avoids choking the drum. When tuning to higher 
+fundamental pitches, eg., above 3G, it’s a good idea to keep the resonant head from exceeding 
+a lug-frequency of 400 Hz, to avoid stretching or choking; typical resonant heads are only 3 mils. 
+thick and can easily deform.  In these cases simply reduce the size of the interval to perfect 
+fourths or major thirds (1.33 or 1.26 respectively) or lower, to keep the resonant head from 
+getting too high in lug pitch. 
+Recommendations 
+Suggested top and bottom (batter and resonant) head lug tuning frequencies for a typical 14” 
+snare drum are listed below. Depending on the specific drum, and the thickness of the drum 
+heads, the required frequencies may vary so try these as a starting point and adjust accordingly. 
+Lug-Frequencies for a typical 14” Snare Drum. 
+Fund. Note Interval Top Lug Freq. (Hz) Snare Lug Freq. (Hz) 
+3E Perfect Fifth 229 343 
+3F Perfect Fifth 240 359 
+3F# Perfect Fifth 252 378 
+3G Perfect Fifth 266 398 
+3G# Perfect Fourth 299 398 
+3A Major Third 318 400 
+3A# -  356 400 
+ 
+ 
+  
+
+=== PAGE 6 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Bass Drum Tuning 
+A lot of factors go into tuning your bass drum such as, the type of heads, use of cut-outs or kick-
+ports in the resonant head and the type of damping, eg., a pillow in the drum etc. A good 
+starting point is to tune the lug-frequency of the resonant head a perfect fifth (1.5 times) higher 
+in frequency than the batter head. Some people prefer the opposite while others prefer the 
+heads closer in lug-frequency; again, a matter personal preference and some experimentation 
+may pay off. 
+ 
+Diameter Fund. Note Batter Lug Freq. (Hz) Resonant Lug Freq. (Hz) 
+24” 1C 49 74 
+24” 1C# 52 78 
+22-24” 1D 55 82 
+22” 1D# 58 87 
+22” 1E 61 91 
+20” 1F 64 96 
+20” 1F# 68 101 
+18” 1G 71 107 
+  
+
+=== PAGE 7 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Appendix A.  Musical Intervals for Drum Tuning 
+Before describing each of these interval relationships in detail some terminology will be 
+defined. First, an octave corresponds to a doubling in frequency, for example the notes A (220 
+Hz) and A (440 Hz) are one octave apart. Second, there are twelve semi-tones in an octave (A, 
+A# … G#) and the semitones are evenly spaced, i.e., the frequency ratio of any two successive 
+semi-tones are equal. Expressed mathematically, the frequency ratio of two successive semi-
+tones is              and consequently, the frequency ratio of 12 consecutive semi-tones is 
+(     )
+  
+  , exactly one octave as required. 
+ 
+Major Thirds 
+Consecutive notes in this interval are 4 semitones apart, or equivalently, have a frequency ratio 
+of             . Since there are 12 semi-tones in an octave, a set of 4 notes in major thirds 
+spans an octave and is a good choice for tuning a set of 4 or more toms. The following table 
+shows all possible sequences of major thirds. The top row in the table shows the corresponding 
+frequency ratios to allow arbitrary tuning in major-thirds. 
+ 
+1.0 1.26 1.59 2.0 
+C E G# C 
+C# F A C# 
+D F# A#  D  
+D# G B D# 
+E G# C E 
+F A C# F 
+F# A# D F 
+G B D# G 
+G# C E G# 
+A C# F A 
+A# D F# A 
+B D#  G B 
+  
+
+=== PAGE 8 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+Perfect Fourths 
+Consecutive notes in this interval are 5 semitones apart, or equivalently, have a frequency ratio 
+of            . This interval is a good choice for tuning a set of 4 toms if you want to span 
+more than a single octave in frequency. The following table shows all possible sequences of 
+perfect fourths. The top row in the table shows the corresponding frequency ratios to allow 
+arbitrary tuning in perfect fourths. 
+ 
+1.0 1.33 1.78 2.38 
+C F A# D# 
+C# F# B E 
+D G C F 
+D# G# C# F# 
+E A D G 
+F A# D# G# 
+F# B E A 
+G C F A# 
+G# C# F# B 
+A D G C 
+A# D# G# C# 
+B E A D 
+ 
+Perfect Fifths 
+Consecutive notes in this interval are 7 semitones apart, or equivalently, have a frequency ratio 
+of           . This interval is a good choice for tuning a set of 2 or 3 toms. The following 
+table shows all possible sequences of perfect fifths. The top row in the table shows the 
+corresponding frequency ratios to allow arbitrary tuning in perfect fifths. 
+ 
+1.0 1.5 2.25 
+C G D 
+C# G# D# 
+D A E 
+D# A# F 
+E B F# 
+F C G 
+F# C# G# 
+G D A 
+
+=== PAGE 9 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+G# D# A# 
+A E B 
+A# F C 
+B F# C# 
+ 
+Major Chords 
+A major chord consists of three notes, a root note, a major-third, and a perfect-fifth (7 semi-
+tones from the root note). The three notes in a chord are a good choice for tuning a set of 3 
+toms. The following table shows major chords for every major scale. The top row in the table 
+shows the corresponding frequency ratios to allow arbitrary tuning with major chords. 
+ 
+1.0 1.26 1.5 
+C E G 
+C# F G# 
+D F# A 
+D# G A# 
+E G# B 
+F A C 
+F# A# C# 
+G B D 
+G# C D# 
+A C# E 
+A# D F 
+B D# F# 
+ 
+ 
+  
+
+=== PAGE 10 ===
+© Overtone Labs 2012. All rights reserved. 
+ 
+The Call to the Post 
+The 4 notes making up the song, "The Call to the Post", are also a popular choice in tom tuning 
+and are separated by 5, 4, and 3 semi-tones respectively. The following table shows the 
+sequence in all possible major keys. The top row in the table shows the corresponding 
+frequency ratios to allow arbitrary tuning to this song. 
+ 
+1.0 1.33 1.68 2.0 
+C F A C 
+C# F# A# C# 
+D G B D 
+D# G# C D# 
+E A C# E 
+F A# D F 
+F# B D# F# 
+G C E G 
+G# C# F G# 
+A D F# A 
+A# D# G A# 
+B E G# B 
+ 
+ 
+ 
+Appendix B.  Frequencies of Musical Notes for first Five Octaves 
+ 
+Oct. C C # D D # E F F # G G # A A # B 
+1 32.7 34.6 36.7 38.9 41.2 43.7 46.2 49 51.9 55 58.3 61.7 
+2 65.4 69.3 73.4 77.8 82.4 87.3 92.5 98 103.8 110 116.5 123.5 
+3 130.8 138.6 146.8 155.6 164.8 174.6 185 196 207.7 220 233.1 246.9 
+4 261.6 277.2 293.7 311.1 329.6 349.2 370 392 415.3 440 466.1 493.9 
+5 523.3 554.4 587.3 622.3 659.3 698.5 740.0 784.0 830.6 880.0 932.2 987.8 
+ 
+ 
+ 
+

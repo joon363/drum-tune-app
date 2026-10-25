@@ -1,0 +1,34 @@
+{
+  "name": "tunebot-clone",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:phone": "node scripts/toggleLiveReload.js on && adb reverse tcp:3000 tcp:3000 && vite",
+    "build": "tsc && vite build",
+    "build:apk": "node scripts/toggleLiveReload.js off && npm run build && cap sync android && cd android && gradlew.bat assembleDebug && cd ..",
+    "preview": "vite preview",
+    "cap:sync": "cap sync android",
+    "cap:build": "npm run build && cap sync android",
+    "cap:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.31",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  }
+}

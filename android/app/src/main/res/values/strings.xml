@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DrumTunerBot</string>
+    <string name="title_activity_main">DrumTunerBot</string>
+    <string name="package_name">com.drumtuner.tunebot</string>
+    <string name="custom_url_scheme">com.drumtuner.tunebot</string>
+</resources>
