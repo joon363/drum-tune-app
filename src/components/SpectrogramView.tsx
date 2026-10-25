@@ -1,151 +1,171 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Play, Pause, ZoomIn, ZoomOut, Sliders, Volume2 } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Sliders } from 'lucide-react';
 import { DetectedPitchInfo } from '../types';
-import { NOTE_NAMES, BASE_NOTE_FREQUENCIES } from '../constants/tuningGuide';
 import { frequencyToNote } from '../utils/audioMath';
+import { audioEngine } from '../services/audioEngine';
 
 interface SpectrogramViewProps {
   onBack: () => void;
   detectedPitch: DetectedPitchInfo | null;
-  onSimulateHit: (hz: number) => void;
 }
 
-// Color map palette matching specto.png:
-// Deep Black -> Blue/Cyan -> Purple/Violet -> Orange/Yellow -> White
+// Color map palette: Black -> Blue/Cyan -> Magenta/Purple -> Gold/Amber -> White
 function getSpectrogramColor(value: number): [number, number, number] {
-  // value is 0.0 to 1.0 (normalized intensity)
-  if (value < 0.15) {
-    // Noise floor: black to deep dark blue
-    const t = value / 0.15;
-    return [Math.floor(8 * t), Math.floor(12 * t), Math.floor(30 * t)];
-  } else if (value < 0.38) {
-    // Low: deep blue to cyan/teal
-    const t = (value - 0.15) / 0.23;
-    return [Math.floor(10 + 20 * t), Math.floor(30 + 170 * t), Math.floor(60 + 195 * t)];
+  if (value < 0.10) {
+    const t = value / 0.10;
+    return [Math.floor(6 * t), Math.floor(10 * t), Math.floor(28 * t)];
+  } else if (value < 0.32) {
+    const t = (value - 0.10) / 0.22;
+    return [Math.floor(6 + 24 * t), Math.floor(28 + 172 * t), Math.floor(58 + 197 * t)];
   } else if (value < 0.65) {
-    // Mid: cyan to vivid magenta/purple
-    const t = (value - 0.38) / 0.27;
+    const t = (value - 0.32) / 0.33;
     return [Math.floor(30 + 190 * t), Math.floor(200 - 150 * t), Math.floor(255 - 50 * t)];
   } else if (value < 0.88) {
-    // High: purple to bright amber/gold
     const t = (value - 0.65) / 0.23;
     return [Math.floor(220 + 35 * t), Math.floor(50 + 160 * t), Math.floor(205 - 180 * t)];
   } else {
-    // Peak: bright gold to white hot
     const t = (value - 0.88) / 0.12;
     return [255, Math.floor(210 + 45 * t), Math.floor(25 + 230 * t)];
   }
 }
 
+// Frequency range: C1 (~32.7 Hz) to C6 (~1046.5 Hz)
+const MIN_MIDI = 24; // C1
+const MAX_MIDI = 84; // C6 (5 full octaves, covers all drum fundamentals and overtones)
+
+// Major note landmarks (C, E, G per octave) to display cleanly on vertical axis without crowding
+const DISPLAY_LANDMARKS = [
+  { midi: 84, name: 'C6', isRoot: true },
+  { midi: 79, name: 'G5', isRoot: false },
+  { midi: 76, name: 'E5', isRoot: false },
+  { midi: 72, name: 'C5', isRoot: true },
+  { midi: 67, name: 'G4', isRoot: false },
+  { midi: 64, name: 'E4', isRoot: false },
+  { midi: 60, name: 'C4', isRoot: true },
+  { midi: 55, name: 'G3', isRoot: false },
+  { midi: 52, name: 'E3', isRoot: false },
+  { midi: 48, name: 'C3', isRoot: true },
+  { midi: 43, name: 'G2', isRoot: false },
+  { midi: 40, name: 'E2', isRoot: false },
+  { midi: 36, name: 'C2', isRoot: true },
+  { midi: 31, name: 'G1', isRoot: false },
+  { midi: 28, name: 'E1', isRoot: false },
+  { midi: 24, name: 'C1', isRoot: true },
+];
+
 export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
   onBack,
   detectedPitch,
-  onSimulateHit,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
+
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [gain, setGain] = useState<number>(1.4);
-  const [octaveOffset, setOctaveOffset] = useState<number>(2); // Default centered around Octave 2 & 3 (drum range)
+  const [gain, setGain] = useState<number>(1.5);
+  const [canvasHeight, setCanvasHeight] = useState<number>(500);
 
-  // Current pitch info
-  const currentHz = detectedPitch?.frequency || 109.3;
-  const noteInfo = frequencyToNote(currentHz);
-  const currentNote = noteInfo.fullName || 'A2';
-  const cents = noteInfo.cents || 0;
+  // Current detected pitch info for top header
+  const currentHz = detectedPitch?.frequency || 0;
+  const noteInfo = currentHz > 0 ? frequencyToNote(currentHz) : { fullName: '--', cents: 0 };
+  const currentNote = noteInfo.fullName;
+  const cents = noteInfo.cents;
 
-  // The notes shown on vertical axis in specto.png:
-  // Top is high pitch (B), bottom is low pitch (C)
-  const octaveNotes = ['B', 'Bb', 'A', 'G#', 'G', 'F#', 'F', 'E', 'Eb', 'D', 'C#', 'C'];
+  // Measure container height to fit the screen exactly
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const h = containerRef.current.clientHeight;
+        if (h > 100) {
+          setCanvasHeight(h);
+        }
+      }
+    };
 
-  // Min and max frequencies for the visible range
-  // Octave 2 C (65.4Hz) to B (123.5Hz) or span across 2 octaves
-  const minFreq = octaveOffset === 1 ? 32.7 : octaveOffset === 2 ? 65.4 : 130.8;
-  const maxFreq = minFreq * 4; // 2 full octaves visible
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
+  // Continuous 60fps real-time FFT Waterfall
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || canvasHeight <= 0) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animId: number;
-    let xOffset = 0;
+    const width = 500; // Internal buffer resolution
+    const height = canvasHeight;
 
-    // Buffer to hold history of spectrogram columns
-    const width = canvas.width;
-    const height = canvas.height;
+    canvas.width = width;
+    canvas.height = height;
 
-    // Offscreen canvas for fast scrolling buffer
     const offscreen = document.createElement('canvas');
     offscreen.width = width;
     offscreen.height = height;
     const offCtx = offscreen.getContext('2d')!;
-    offCtx.fillStyle = '#06070a';
+    offCtx.fillStyle = '#05070c';
     offCtx.fillRect(0, 0, width, height);
+    offscreenRef.current = offscreen;
+
+    let animId: number;
+    const rawFreqBuffer = new Uint8Array(2048);
+    const stepWidth = 3;
 
     const render = () => {
       if (!isPaused) {
-        // Shift offscreen canvas 2 pixels to the left
-        offCtx.drawImage(offscreen, 2, 0, width - 2, height, 0, 0, width - 2, height);
+        // 1. Shift canvas left
+        offCtx.drawImage(offscreen, stepWidth, 0, width - stepWidth, height, 0, 0, width - stepWidth, height);
 
-        // Generate current column based on detected pitch & harmonics or simulated noise
-        const imgData = offCtx.createImageData(2, height);
+        // 2. Read live FFT buffer
+        const { data: freqData, sampleRate } = audioEngine.getLatestFrequencyData(rawFreqBuffer);
+        const binCount = freqData.length;
+        const binHz = (sampleRate / 2) / binCount;
 
-        // Convert current frequency to vertical y coordinate (logarithmic scale)
-        // High frequencies at top (y = 0), low frequencies at bottom (y = height)
-        const activeY = height - (Math.log2(currentHz / minFreq) / Math.log2(maxFreq / minFreq)) * height;
-        const subY = height - (Math.log2((currentHz * 0.5) / minFreq) / Math.log2(maxFreq / minFreq)) * height;
-        const overtoneY = height - (Math.log2((currentHz * 1.5) / minFreq) / Math.log2(maxFreq / minFreq)) * height;
-
-        const hasRecentSound = detectedPitch && Date.now() - detectedPitch.timestamp < 600;
+        // 3. Render continuous frequency column
+        const colData = offCtx.createImageData(stepWidth, height);
 
         for (let y = 0; y < height; y++) {
-          // Calculate baseline noise texture
-          let intensity = Math.random() * 0.08;
+          const frac = y / height;
+          const midi = MAX_MIDI - frac * (MAX_MIDI - MIN_MIDI);
+          const f = 440 * Math.pow(2, (midi - 69) / 12);
 
-          if (hasRecentSound) {
-            // Main fundamental peak
-            const dist = Math.abs(y - activeY);
-            if (dist < 18) {
-              intensity += Math.exp(-(dist * dist) / 28) * 0.95 * gain;
-            }
+          const binFloat = f / binHz;
+          let magnitude = 0;
 
-            // Subharmonic peak
-            const subDist = Math.abs(y - subY);
-            if (subDist < 12) {
-              intensity += Math.exp(-(subDist * subDist) / 20) * 0.65 * gain;
-            }
-
-            // Overtone peak
-            const overDist = Math.abs(y - overtoneY);
-            if (overDist < 14) {
-              intensity += Math.exp(-(overDist * overDist) / 24) * 0.75 * gain;
-            }
+          if (binFloat >= 0 && binFloat < binCount - 1) {
+            const b0 = Math.floor(binFloat);
+            const b1 = b0 + 1;
+            const t = binFloat - b0;
+            magnitude = freqData[b0] * (1 - t) + freqData[b1] * t;
+          } else if (binFloat >= binCount - 1 && binFloat < binCount) {
+            magnitude = freqData[binCount - 1];
           }
 
-          intensity = Math.min(1.0, Math.max(0.0, intensity));
-          const [r, g, b] = getSpectrogramColor(intensity);
+          const normalized = Math.min(1.0, Math.max(0.0, (magnitude / 255) * gain));
+          const [r, g, b] = getSpectrogramColor(normalized);
 
-          for (let px = 0; px < 2; px++) {
-            const idx = (y * 2 + px) * 4;
-            imgData.data[idx] = r;
-            imgData.data[idx + 1] = g;
-            imgData.data[idx + 2] = b;
-            imgData.data[idx + 3] = 255;
+          for (let px = 0; px < stepWidth; px++) {
+            const idx = (y * stepWidth + px) * 4;
+            colData.data[idx] = r;
+            colData.data[idx + 1] = g;
+            colData.data[idx + 2] = b;
+            colData.data[idx + 3] = 255;
           }
         }
 
-        offCtx.putImageData(imgData, width - 2, 0);
+        offCtx.putImageData(colData, width - stepWidth, 0);
 
-        // Copy to display canvas
+        // 4. Draw to main canvas
         ctx.drawImage(offscreen, 0, 0);
 
-        // Draw note guideline wires matching specto.png
-        const totalNotes = octaveNotes.length;
-        ctx.lineWidth = 1;
-        for (let i = 0; i < totalNotes; i++) {
-          const y = (i / totalNotes) * height + height / (totalNotes * 2);
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+        // 5. Draw guideline wires across screen
+        for (let i = 0; i < DISPLAY_LANDMARKS.length; i++) {
+          const item = DISPLAY_LANDMARKS[i];
+          const y = ((MAX_MIDI - item.midi) / (MAX_MIDI - MIN_MIDI)) * height;
+
+          ctx.lineWidth = item.isRoot ? 1.5 : 1;
+          ctx.strokeStyle = item.isRoot ? 'rgba(6, 182, 212, 0.4)' : 'rgba(255, 255, 255, 0.1)';
           ctx.beginPath();
           ctx.moveTo(0, y);
           ctx.lineTo(width, y);
@@ -158,40 +178,45 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
 
     animId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animId);
-  }, [isPaused, currentHz, gain, minFreq, maxFreq, detectedPitch]);
+  }, [isPaused, gain, canvasHeight]);
 
-  // Tuner needle position clamped between -50 cents and +50 cents
   const clampedCents = Math.max(-50, Math.min(50, cents));
   const needlePercent = ((clampedCents + 50) / 100) * 100;
 
   return (
     <div className="fixed inset-0 z-40 bg-black flex flex-col select-none text-white overflow-hidden">
-      {/* Top Header matching specto.png */}
-      <div className="pt-3 pb-2 px-4 bg-slate-950/90 border-b border-slate-900 flex flex-col">
-        {/* Navigation & Controls Row */}
-        <div className="flex items-center justify-between mb-2">
+      {/* Top Header */}
+      <div className="pt-2 pb-2 px-4 bg-slate-950 border-b border-slate-900 flex flex-col z-30">
+        <div className="flex items-center justify-between mb-1.5">
           <button
             onClick={onBack}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition"
           >
             <ArrowLeft size={16} />
             튜너 화면으로
           </button>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onSimulateHit(currentHz)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] text-cyan-300 font-mono hover:bg-slate-800 transition"
-            >
-              <Volume2 size={14} />
-              타격 테스트
-            </button>
+            <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-lg border border-slate-800 text-[11px] text-slate-400">
+              <Sliders size={13} className="text-cyan-400" />
+              <span>감도:</span>
+              <input
+                type="range"
+                min="0.6"
+                max="3.0"
+                step="0.1"
+                value={gain}
+                onChange={(e) => setGain(parseFloat(e.target.value))}
+                className="w-16 accent-cyan-400 h-1 bg-slate-800 rounded-lg cursor-pointer"
+              />
+            </div>
+
             <button
               onClick={() => setIsPaused(!isPaused)}
-              className={`p-1.5 rounded-xl border transition ${
+              className={`p-1.5 rounded-lg border transition ${
                 isPaused
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                  ? 'bg-amber-950 text-amber-300 border-amber-600'
+                  : 'bg-slate-900 text-slate-400 border-slate-800'
               }`}
             >
               {isPaused ? <Play size={16} /> : <Pause size={16} />}
@@ -199,94 +224,59 @@ export const SpectrogramView: React.FC<SpectrogramViewProps> = ({
           </div>
         </div>
 
-        {/* Top Tuner Needle Bar matching specto.png */}
-        <div className="relative w-full max-w-md mx-auto h-6 flex items-center justify-center px-4">
+        {/* Top Tuner Needle Bar */}
+        <div className="relative w-full max-w-md mx-auto h-5 flex items-center justify-center px-4">
           <div className="w-full h-1 bg-slate-800 rounded-full relative">
-            {/* Center target zone mark (green box in specto.png) */}
-            <div className="absolute left-1/2 -top-2 w-7 h-5 bg-emerald-600/60 rounded border border-emerald-400 -translate-x-1/2 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-            <div className="absolute left-1/2 -top-2.5 w-[2px] h-6 bg-emerald-300 -translate-x-1/2 z-10" />
+            <div className="absolute left-1/2 -top-2 w-6 h-5 bg-emerald-950 border border-emerald-500 -translate-x-1/2" />
+            <div className="absolute left-1/2 -top-2 w-[2px] h-5 bg-emerald-400 -translate-x-1/2 z-10" />
 
-            {/* Red needle moving indicator matching specto.png */}
             <div
-              className="absolute -top-3 w-1.5 h-7 bg-red-500 rounded-sm -translate-x-1/2 shadow-[0_0_8px_rgba(239,68,68,0.9)] transition-all duration-75 z-20"
+              className="absolute -top-2.5 w-1.5 h-6 bg-red-500 rounded-sm -translate-x-1/2 transition-all duration-75 z-20"
               style={{ left: `${needlePercent}%` }}
             />
           </div>
         </div>
 
-        {/* Readout row: A=440, Big Note Name, Frequency matching specto.png */}
-        <div className="flex items-center justify-between px-2 mt-1">
-          <span className="text-xs font-mono text-slate-400 tracking-wider">A=440</span>
-          <span className="text-3xl font-extrabold font-mono text-white tracking-tight drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+        {/* Readout row: A=440, Note Name with Octave, Frequency */}
+        <div className="flex items-center justify-between px-2 mt-0.5">
+          <span className="text-xs font-mono text-slate-400">A=440</span>
+          <span className="text-xl font-mono font-bold text-white">
             {currentNote}
           </span>
-          <span className="text-sm font-mono font-bold text-slate-300">
-            {currentHz.toFixed(1)} Hz
+          <span className="text-xs font-mono font-bold text-slate-300">
+            {currentHz > 0 ? `${currentHz.toFixed(1)} Hz` : '-- Hz'}
           </span>
         </div>
       </div>
 
-      {/* Main Waterfall Spectrogram Area matching specto.png */}
-      <div className="relative flex-1 w-full bg-black flex overflow-hidden">
-        {/* Left Vertical Note Axis matching specto.png */}
-        <div className="w-14 bg-black/85 z-20 flex flex-col justify-between py-2 pl-3 pr-1 border-r border-slate-900 pointer-events-none">
-          {octaveNotes.map((note) => {
-            const isCurrent = currentNote.includes(note);
+      {/* Main Screen-Height-Fit Spectrogram Container */}
+      <div
+        ref={containerRef}
+        className="relative flex-1 w-full bg-black overflow-hidden flex"
+      >
+        {/* Left Vertical Note Axis: Nicely spaced note landmarks matching height-fit */}
+        <div className="w-12 bg-slate-950 border-r border-slate-900 flex-shrink-0 relative pointer-events-none select-none">
+          {DISPLAY_LANDMARKS.map((item) => {
+            const yPercent = ((MAX_MIDI - item.midi) / (MAX_MIDI - MIN_MIDI)) * 100;
             return (
-              <span
-                key={note}
-                className={`font-mono text-base font-extrabold transition-colors tracking-tight ${
-                  isCurrent
-                    ? 'text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] scale-110'
-                    : 'text-slate-400'
+              <div
+                key={item.midi}
+                className={`absolute left-0 right-0 -translate-y-1/2 px-1 text-center font-mono text-xs font-bold ${
+                  item.isRoot ? 'text-cyan-400' : 'text-slate-500'
                 }`}
+                style={{ top: `${yPercent}%` }}
               >
-                {note}
-              </span>
+                {item.name}
+              </div>
             );
           })}
         </div>
 
-        {/* Canvas for 60fps scrolling waterfall */}
+        {/* Real-time Continuous FFT Waterfall Canvas (Height: 100%) */}
         <div className="relative flex-1 h-full">
           <canvas
             ref={canvasRef}
-            width={400}
-            height={600}
-            className="w-full h-full object-cover block"
-          />
-        </div>
-      </div>
-
-      {/* Bottom Range & Sensitivity Bar */}
-      <div className="px-4 py-2 bg-slate-950 border-t border-slate-900 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-1.5">
-          <span>옥타브 범위:</span>
-          {[1, 2, 3].map((oct) => (
-            <button
-              key={oct}
-              onClick={() => setOctaveOffset(oct)}
-              className={`px-2 py-0.5 rounded text-[11px] font-mono border transition ${
-                octaveOffset === oct
-                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 font-bold'
-                  : 'bg-slate-900 text-slate-400 border-slate-800'
-              }`}
-            >
-              {oct} ~ {oct + 1}옥타브
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span>감도:</span>
-          <input
-            type="range"
-            min="0.5"
-            max="2.5"
-            step="0.1"
-            value={gain}
-            onChange={(e) => setGain(parseFloat(e.target.value))}
-            className="w-20 accent-cyan-400 h-1 bg-slate-800 rounded-lg cursor-pointer"
+            className="w-full h-full block"
           />
         </div>
       </div>

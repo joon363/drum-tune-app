@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   Activity,
@@ -6,15 +6,12 @@ import {
   MicOff,
   Filter,
   Smartphone,
-  Sparkles,
-  Volume2,
 } from 'lucide-react';
 import { DrumItem, TuningTargetHead, TuningMode, ResonanceType, HeadBias, DetectedPitchInfo } from './types';
 import {
   DEFAULT_DRUM_KIT,
   TUNING_PRESETS,
   calculateLugFrequencies,
-  BASE_NOTE_FREQUENCIES,
 } from './constants/tuningGuide';
 import { audioEngine } from './services/audioEngine';
 import { TuningMeter } from './components/TuningMeter';
@@ -28,17 +25,17 @@ import { AndroidGuideModal } from './components/AndroidGuideModal';
 export const App: React.FC = () => {
   // Drum Kit State
   const [drums, setDrums] = useState<DrumItem[]>(DEFAULT_DRUM_KIT);
-  const [selectedDrumId, setSelectedDrumId] = useState<string>('tom-12'); // 12" tom selected by default (matches front.png)
-  const [targetHead, setTargetHead] = useState<TuningTargetHead>('top'); // 윗면 selected by default (matches front.png)
-  const [tuningMode, setTuningMode] = useState<TuningMode>('lug'); // 러그 tuning by default
+  const [selectedDrumId, setSelectedDrumId] = useState<string>('tom-12'); // 12" tom selected by default
+  const [targetHead, setTargetHead] = useState<TuningTargetHead>('top'); // 윗면 selected by default
+  const [tuningMode, setTuningMode] = useState<TuningMode>('fundamental'); // 윗면 중앙이 기본으로 시작
 
   // Global Tuning Settings
   const [globalResonance, setGlobalResonance] = useState<ResonanceType>('medium');
   const [globalHeadBias, setGlobalHeadBias] = useState<HeadBias>('bottom-higher');
   const [kitSize, setKitSize] = useState<number>(6);
 
-  // Audio Engine State
-  const [isMicActive, setIsMicActive] = useState<boolean>(false);
+  // Audio Engine State: Microphone is ON by default
+  const [isMicActive, setIsMicActive] = useState<boolean>(true);
   const [isFilterActive, setIsFilterActive] = useState<boolean>(true);
   const [detectedPitch, setDetectedPitch] = useState<DetectedPitchInfo | null>(null);
 
@@ -56,19 +53,40 @@ export const App: React.FC = () => {
     tuningMode === 'fundamental'
       ? currentDrum.targetFundamentalHz
       : targetHead === 'top'
-      ? currentDrum.targetTopLugHz
-      : currentDrum.targetBottomLugHz;
+        ? currentDrum.targetTopLugHz
+        : currentDrum.targetBottomLugHz;
 
   const activeTargetNote = currentDrum.targetFundamentalNote;
 
-  // Initialize Audio Callbacks
+  // Initialize and Auto-Start Microphone (Default ON)
   useEffect(() => {
     audioEngine.setCallbacks(
       (info) => setDetectedPitch(info),
-      null // SpectrogramView handles canvas rendering
+      null
     );
 
+    const startMic = async () => {
+      const started = await audioEngine.start();
+      setIsMicActive(started);
+    };
+
+    startMic();
+
+    // In mobile browsers/Webview, ensure AudioContext resumes on first user touch if blocked by autoplay policy
+    const handleFirstTouch = () => {
+      if (!audioEngine.isActive()) {
+        audioEngine.start().then((started) => setIsMicActive(started));
+      }
+      window.removeEventListener('click', handleFirstTouch);
+      window.removeEventListener('touchstart', handleFirstTouch);
+    };
+
+    window.addEventListener('click', handleFirstTouch);
+    window.addEventListener('touchstart', handleFirstTouch);
+
     return () => {
+      window.removeEventListener('click', handleFirstTouch);
+      window.removeEventListener('touchstart', handleFirstTouch);
       audioEngine.stop();
     };
   }, []);
@@ -85,11 +103,7 @@ export const App: React.FC = () => {
       setIsMicActive(false);
     } else {
       const started = await audioEngine.start();
-      if (started) {
-        setIsMicActive(true);
-      } else {
-        alert('마이크를 시작할 수 없습니다. 마이크 권한을 확인해 주세요.');
-      }
+      setIsMicActive(started);
     }
   };
 
@@ -104,9 +118,48 @@ export const App: React.FC = () => {
     setIsDrumSettingsOpen(true);
   };
 
-  // Save individual drum update
+  // Save individual drum update (Reset tuning completion for this drum when settings change)
   const handleSaveDrum = (updated: DrumItem) => {
-    setDrums((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    setDrums((prev) =>
+      prev.map((d) =>
+        d.id === updated.id
+          ? {
+              ...updated,
+              completedTuning: {
+                topFundamental: false,
+                topLug: false,
+                bottomFundamental: false,
+                bottomLug: false,
+              },
+            }
+          : d
+      )
+    );
+  };
+
+  // Toggle tuning completion for a specific target on current drum
+  const handleToggleCompleted = (head: TuningTargetHead, mode: TuningMode) => {
+    setDrums((prev) =>
+      prev.map((d) => {
+        if (d.id !== selectedDrumId) return d;
+        const current = d.completedTuning || {};
+        const key =
+          head === 'top'
+            ? mode === 'fundamental'
+              ? 'topFundamental'
+              : 'topLug'
+            : mode === 'fundamental'
+            ? 'bottomFundamental'
+            : 'bottomLug';
+        return {
+          ...d,
+          completedTuning: {
+            ...current,
+            [key]: !current[key],
+          },
+        };
+      })
+    );
   };
 
   // Apply Global Resonance to all drums
@@ -169,14 +222,12 @@ export const App: React.FC = () => {
   const handleSetKitSize = (count: number) => {
     setKitSize(count);
     if (count === 3) {
-      // 12, 14, Snare
       setDrums(
         DEFAULT_DRUM_KIT.filter(
           (d) => d.id === 'tom-12' || d.id === 'tom-14' || d.id === 'snare-14'
         )
       );
     } else if (count === 4) {
-      // 10, 12, 14, Snare
       setDrums(
         DEFAULT_DRUM_KIT.filter(
           (d) =>
@@ -187,58 +238,17 @@ export const App: React.FC = () => {
         )
       );
     } else if (count === 5) {
-      // 10, 12, 14, 16, Snare
       setDrums(DEFAULT_DRUM_KIT.filter((d) => d.id !== 'tom-8'));
     } else {
-      // 6 toms + Snare full kit
       setDrums(DEFAULT_DRUM_KIT);
     }
   };
 
-  // Test sound simulation
-  const handleSimulateStrike = (hz?: number) => {
-    const target = hz || activeTargetHz;
-    audioEngine.simulateDrumHit(target);
-  };
-
   return (
-    <div className="w-full min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans select-none overflow-x-hidden">
-      {/* Top App Bar */}
-      <header className="w-full px-4 py-2.5 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between z-30 sticky top-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-600 to-sky-400 flex items-center justify-center shadow-lg shadow-cyan-500/30">
-            <Activity size={18} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              TuneBot <span className="text-[10px] text-cyan-400 font-mono font-medium px-1.5 py-0.2 bg-cyan-950 border border-cyan-800 rounded">DRUM TUNER</span>
-            </h1>
-          </div>
-        </div>
+    <div className="w-full min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans select-none overflow-x-hidden relative">
 
-        <div className="flex items-center gap-2">
-          {/* Test Sound button */}
-          <button
-            onClick={() => handleSimulateStrike()}
-            title="타격음 시뮬레이션 (테스트)"
-            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-cyan-300 hover:bg-slate-800 transition"
-          >
-            <Volume2 size={16} />
-          </button>
-
-          {/* Android Guide Button */}
-          <button
-            onClick={() => setIsAndroidGuideOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-950/80 border border-cyan-700/60 text-cyan-300 text-xs font-semibold hover:bg-cyan-900 transition"
-          >
-            <Smartphone size={14} />
-            <span>폰 연결/설치</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-1">
+      {/* Main Content Area (Full height available, no footer) */}
+      <main className="flex-1 w-full max-w-lg mx-auto flex flex-col items-center justify-between px-3 py-1 pb-16">
         {/* 1. Top Tuning Meter Bar & Readout (matches front.png) */}
         <TuningMeter
           detectedPitch={detectedPitch}
@@ -254,6 +264,7 @@ export const App: React.FC = () => {
           tuningMode={tuningMode}
           onSelectHead={setTargetHead}
           onSelectMode={setTuningMode}
+          onToggleCompleted={handleToggleCompleted}
         />
 
         {/* 3. Drum Kit Diagram (matches 배치.png and front.png) */}
@@ -262,76 +273,74 @@ export const App: React.FC = () => {
           selectedDrumId={selectedDrumId}
           onSelectDrum={handleSelectDrum}
           onOpenDrumSettings={handleOpenDrumSettings}
-          onSimulateTap={(drum) => handleSimulateStrike(drum.targetFundamentalHz)}
         />
       </main>
 
-      {/* Bottom Action / Navigation Bar (matches app.md) */}
-      <nav className="w-full bg-slate-950/95 backdrop-blur-lg border-t border-slate-800/80 px-4 py-2.5 flex items-center justify-around z-30 sticky bottom-0">
-        {/* Settings Button: 톱니바퀴 (Tuning guide chords & global resonance) */}
-        <button
-          onClick={() => setIsGlobalSettingsOpen(true)}
-          className="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-slate-900 transition"
-        >
-          <Settings size={22} />
-          <span className="text-[10px] font-medium">가이드 설정</span>
-        </button>
-
-        {/* Center: Microphone Toggle & Filter Mode */}
-        <div className="flex items-center gap-2">
-          {/* Filter Mode Toggle (Tune-Bot FILTER) */}
-          <button
-            onClick={() => setIsFilterActive(!isFilterActive)}
-            title="필터 모드: 목표 주파수 대역 외 잡음 차단"
-            className={`p-2.5 rounded-xl border flex flex-col items-center gap-0.5 transition ${
-              isFilterActive
-                ? 'bg-blue-600/20 text-cyan-300 border-cyan-500/60 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
-                : 'bg-slate-900 text-slate-400 border-slate-800'
-            }`}
-          >
-            <Filter size={18} />
-            <span className="text-[9px] font-bold">필터 {isFilterActive ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* Mic Master Button */}
-          <button
-            onClick={handleToggleMic}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-xs tracking-wider transition-all duration-300 shadow-xl ${
-              isMicActive
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-emerald-500/40 animate-pulse'
-                : 'bg-gradient-to-r from-cyan-500 to-sky-500 text-slate-950 hover:brightness-110 shadow-cyan-500/30'
-            }`}
-          >
-            {isMicActive ? (
-              <>
-                <Mic size={18} className="animate-bounce" />
-                <span>수음 중</span>
-              </>
-            ) : (
-              <>
-                <MicOff size={18} />
-                <span>마이크 시작</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        {/* Spectrometer Button: 그래프 모양 버튼 (matches app.md) */}
+      {/* Floating Action Buttons Cluster on Bottom-Left (Vertical Stack) */}
+      <div className="fixed bottom-5 left-4 z-40 flex flex-col items-center gap-2">
+        {/* Spectrometer FAB (그래프 모양 스펙트로 버튼) */}
         <button
           onClick={() => setViewMode('spectrogram')}
-          className="flex flex-col items-center gap-1 p-2 rounded-xl text-slate-400 hover:text-cyan-300 hover:bg-slate-900 transition"
+          className="w-11 h-11 rounded-xl bg-slate-900 text-cyan-300 border border-cyan-400 flex flex-col items-center justify-center transition active:scale-95 shadow-lg"
+          title="스펙트로미터 화면으로 전환"
         >
-          <Activity size={22} className="text-cyan-400" />
-          <span className="text-[10px] font-medium">스펙트로</span>
+          <Activity size={18} className="text-cyan-300" />
+          <span className="text-[9px] text-cyan-300 font-bold">스펙트로</span>
         </button>
-      </nav>
+
+        {/* Filter Toggle FAB */}
+        <button
+          onClick={() => setIsFilterActive(!isFilterActive)}
+          className={`w-11 h-11 rounded-xl border flex flex-col items-center justify-center transition active:scale-95 shadow-lg ${
+            isFilterActive
+              ? 'bg-cyan-950 border-cyan-400 text-cyan-300'
+              : 'bg-slate-900 border-slate-800 text-slate-500'
+          }`}
+          title="필터 모드 (목표 대역 외 잡음 차단)"
+        >
+          <Filter size={16} />
+          <span className="text-[9px] font-bold">{isFilterActive ? '필터ON' : '필터OFF'}</span>
+        </button>
+
+        {/* Settings FAB (톱니바퀴) */}
+        <button
+          onClick={() => setIsGlobalSettingsOpen(true)}
+          className="w-11 h-11 rounded-xl bg-slate-900 text-slate-300 border border-slate-700 flex flex-col items-center justify-center transition active:scale-95 shadow-lg"
+          title="튜닝 가이드 및 글로벌 설정"
+        >
+          <Settings size={18} className="text-cyan-400" />
+          <span className="text-[9px] text-slate-400 font-semibold">설정</span>
+        </button>
+
+        {/* Mic Master Toggle FAB (Default ON) */}
+        <button
+          onClick={handleToggleMic}
+          className={`w-11 h-11 rounded-xl border flex flex-col items-center justify-center transition active:scale-95 shadow-lg ${
+            isMicActive
+              ? 'bg-emerald-950 border-emerald-400 text-emerald-300'
+              : 'bg-slate-900 border-slate-700 text-slate-400'
+          }`}
+          title={isMicActive ? '마이크 켜짐 (터치 시 일시정지)' : '마이크 꺼짐 (터치 시 켜기)'}
+        >
+          {isMicActive ? (
+            <>
+              <Mic size={17} className="text-emerald-400" />
+              <span className="text-[9px] text-emerald-400 font-bold">마이크ON</span>
+            </>
+          ) : (
+            <>
+              <MicOff size={17} />
+              <span className="text-[9px] text-slate-400 font-bold">OFF</span>
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Fullscreen Spectrogram View (specto.png) */}
       {viewMode === 'spectrogram' && (
         <SpectrogramView
           onBack={() => setViewMode('tuner')}
           detectedPitch={detectedPitch}
-          onSimulateHit={handleSimulateStrike}
         />
       )}
 
@@ -341,7 +350,6 @@ export const App: React.FC = () => {
         isOpen={isDrumSettingsOpen}
         onClose={() => setIsDrumSettingsOpen(false)}
         onSave={handleSaveDrum}
-        onSimulateSound={handleSimulateStrike}
       />
 
       {/* Global Settings Modal (Tuning guide chord selection & global resonance) */}

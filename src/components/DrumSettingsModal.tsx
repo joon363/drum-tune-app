@@ -8,7 +8,6 @@ interface DrumSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (updated: DrumItem) => void;
-  onSimulateSound: (hz: number) => void;
 }
 
 const AVAILABLE_SIZES = [8, 10, 12, 13, 14, 15, 16, 18, 20, 22];
@@ -18,7 +17,6 @@ export const DrumSettingsModal: React.FC<DrumSettingsModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  onSimulateSound,
 }) => {
   const [sizeInches, setSizeInches] = useState<number>(drum.sizeInches);
   const [type, setType] = useState<DrumType>(drum.type);

@@ -6,7 +6,6 @@ interface DrumKitViewProps {
   selectedDrumId: string;
   onSelectDrum: (drum: DrumItem) => void;
   onOpenDrumSettings: (drum: DrumItem) => void;
-  onSimulateTap?: (drum: DrumItem) => void;
 }
 
 export const DrumKitView: React.FC<DrumKitViewProps> = ({
@@ -14,7 +13,6 @@ export const DrumKitView: React.FC<DrumKitViewProps> = ({
   selectedDrumId,
   onSelectDrum,
   onOpenDrumSettings,
-  onSimulateTap,
 }) => {
   const handleDrumClick = (drum: DrumItem) => {
     if (drum.id === selectedDrumId) {
@@ -54,40 +52,36 @@ export const DrumKitView: React.FC<DrumKitViewProps> = ({
               {/* Outer Selection Highlight Ring (front.png double ring) */}
               {isSelected && (
                 <div
-                  className="absolute -inset-2.5 rounded-full border-2 border-cyan-400 animate-pulse pointer-events-none shadow-[0_0_20px_rgba(6,182,212,0.6)]"
-                  style={{ animationDuration: '2s' }}
+                  className="absolute -inset-2 rounded-full border-2 border-cyan-400 pointer-events-none"
                 />
               )}
 
               {/* Drum Shell Outer Rim / Hoop */}
               <div
-                className={`w-full h-full rounded-full flex flex-col items-center justify-center relative shadow-2xl transition-all duration-200 border-2 ${
-                  isSelected
-                    ? 'border-cyan-400 bg-gradient-to-br from-slate-900 via-sky-950 to-slate-900 shadow-cyan-500/30'
-                    : 'border-slate-600/90 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 hover:border-slate-400'
-                }`}
+                className={`w-full h-full rounded-full flex flex-col items-center justify-center relative border-2 ${isSelected
+                  ? 'border-cyan-400 bg-slate-900'
+                  : 'border-slate-700 bg-slate-800 hover:border-slate-500'
+                  }`}
               >
                 {/* Simulated Lug Screws along rim */}
-                <div className="absolute -top-1 w-2 h-1 bg-slate-400 rounded-sm" />
-                <div className="absolute -bottom-1 w-2 h-1 bg-slate-400 rounded-sm" />
-                <div className="absolute -left-1 w-1 h-2 bg-slate-400 rounded-sm" />
-                <div className="absolute -right-1 w-1 h-2 bg-slate-400 rounded-sm" />
+                <div className="absolute -top-1 w-2 h-1 bg-slate-500 rounded-sm" />
+                <div className="absolute -bottom-1 w-2 h-1 bg-slate-500 rounded-sm" />
+                <div className="absolute -left-1 w-1 h-2 bg-slate-500 rounded-sm" />
+                <div className="absolute -right-1 w-1 h-2 bg-slate-500 rounded-sm" />
 
                 {/* Inner Drum Head (Skin) */}
                 <div
-                  className={`w-[84%] h-[84%] rounded-full flex flex-col items-center justify-center border transition-colors ${
-                    isSelected
-                      ? 'bg-slate-900/90 border-cyan-500/50'
-                      : isSnare
-                      ? 'bg-slate-900/80 border-slate-700'
-                      : 'bg-slate-950/80 border-slate-700/60'
-                  }`}
+                  className={`w-[84%] h-[84%] rounded-full flex flex-col items-center justify-center border ${isSelected
+                    ? 'bg-slate-950 border-cyan-500/80'
+                    : isSnare
+                      ? 'bg-slate-900 border-slate-700'
+                      : 'bg-slate-900 border-slate-700'
+                    }`}
                 >
                   {/* Drum Label (8, 10, 12, S, 14, 16) */}
                   <span
-                    className={`font-mono font-extrabold tracking-tight transition-colors ${
-                      isSnare ? 'text-amber-400' : isSelected ? 'text-cyan-300' : 'text-slate-200'
-                    }`}
+                    className={`font-mono font-extrabold tracking-tight transition-colors ${isSnare ? 'text-amber-400' : isSelected ? 'text-cyan-300' : 'text-slate-200'
+                      }`}
                     style={{ fontSize: `${Math.max(16, drum.radius * 0.46)}px` }}
                   >
                     {drum.label}
@@ -109,7 +103,7 @@ export const DrumKitView: React.FC<DrumKitViewProps> = ({
         {/* Small tooltip / guide at bottom of kit area */}
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center pointer-events-none">
           <span className="text-[11px] text-slate-400 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-800 shadow">
-            선택된 탐을 <span className="text-cyan-400 font-semibold">한 번 더 터치</span>하면 인치/공명 설정창 열림
+            탐탐 <span className="text-cyan-400 font-semibold">한 번 더 터치</span>해 상세설정
           </span>
         </div>
       </div>

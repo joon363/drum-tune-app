@@ -23,10 +23,19 @@ export interface DrumItem {
   x: number;
   y: number;
   radius: number;
+  // Tuning completion check status
+  completedTuning?: DrumCompletedTuning;
+}
+
+export interface DrumCompletedTuning {
+  topFundamental?: boolean;
+  topLug?: boolean;
+  bottomFundamental?: boolean;
+  bottomLug?: boolean;
 }
 
 export type TuningTargetHead = 'top' | 'bottom';
-export type TuningMode = 'lug' | 'fundamental';
+export type TuningMode = 'fundamental' | 'lug';
 
 export interface TuningGuidePreset {
   id: string;
